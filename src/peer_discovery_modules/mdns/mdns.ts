@@ -14,9 +14,6 @@ function advertiseHost(protocol: string) {
 function discoverHosts(protocol: string) {
   advertiseHost(protocol); // watch all http servers
   const browser = mdns.createBrowser(mdns.tcp(protocol));
-  // const browser = mdns.createBrowser(mdns.tcp("http"));
-
-  //Duplicates exist in serviceUp, so use a set
 
   //A matching service appeared
   browser.on("serviceUp", (service) => {
@@ -45,10 +42,6 @@ function discoverServices() {
     var resolved = mdns.resolve(service, (err, found_service) => {
       console.log(found_service);
     });
-    // console.log(service);
-    // if (service.type.name === 'airplay') {
-    //     console.log(service)
-    // }
   });
 
   all_the_types.start();
