@@ -4622,6 +4622,15 @@
     "jsonfile" "^4.0.0"
     "universalify" "^0.1.0"
 
+"fs-extra@^8.0.0":
+  "integrity" "sha512-3hU7dzpfqG+A7gloPULls7j9mKDzpCyMOTBvQS0lZfqVfjA6/m0AkLXq0O1vnfP5roXjjL1DuUGKapr8vJWmQw=="
+  "resolved" "https://registry.npmjs.org/fs-extra/-/fs-extra-8.0.0.tgz"
+  "version" "8.0.0"
+  dependencies:
+    "graceful-fs" "^4.1.2"
+    "jsonfile" "^4.0.0"
+    "universalify" "^0.1.0"
+
 "fs-extra@^8.1.0":
   "integrity" "sha512-yhlQgA6mnOJUKOsRUFsgJdQCvkKhcz8tlZG5HBQfReYZy46OwLcY+Zia0mtdHsOo9y/hP+CxMN0TU9QxoOtG4g=="
   "resolved" "https://registry.npmjs.org/fs-extra/-/fs-extra-8.1.0.tgz"

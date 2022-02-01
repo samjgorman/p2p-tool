@@ -1,4 +1,14 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
+const fs = require('fs-extra')
+
+//Temp to write to fs
+// fs.writeFile('test.txt', err => {
+//   if (err) {
+//     console.error(err)
+//     return
+//   }
+//   //file written successfully
+// })
 
 let mainWindow: BrowserWindow | null
 
@@ -10,7 +20,7 @@ declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string
 //     ? process.resourcesPath
 //     : app.getAppPath()
 
-function createWindow () {
+function createWindow() {
   mainWindow = new BrowserWindow({
     // icon: path.join(assetsPath, 'assets', 'icon.png'),
     width: 1100,
@@ -19,8 +29,8 @@ function createWindow () {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY
-    }
+      preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+    },
   })
 
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY)
@@ -30,16 +40,43 @@ function createWindow () {
   })
 }
 
-async function registerListeners () {
+//This util appends to a file
+async function writeToFS(message: string) {
+  //If the message is not null?
+  const filename = 'test.txt'
+  if (message.length > 0) {
+    fs.appendFile(filename, message + '\n', err => {
+      if (err) {
+        console.log('Error appending to file' + err)
+      }
+      // } else {
+      //   // Get the file contents after the append operation
+      //   console.log(
+      //     '\nFile Contents of file after append:',
+      //     fs.readFileSync('test.txt', 'utf8')
+      //   )
+      // }
+    })
+  }
+}
+async function registerListeners() {
   /**
    * This comes from bridge integration, check bridge.ts
    */
-  ipcMain.on('message', (_, message) => {
+  // For Send Message function
+  // ipcMain.on('message', (_, message) => {
+  //   console.log('I RELOADED HOT' + message)
+  // })
+
+  //writeToFS
+  ipcMain.on('string_to_write', (_, message) => {
+    writeToFS(message)
     console.log(message)
   })
 }
 
-app.on('ready', createWindow)
+app
+  .on('ready', createWindow)
   .whenReady()
   .then(registerListeners)
   .catch(e => console.error(e))
