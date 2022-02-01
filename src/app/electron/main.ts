@@ -43,7 +43,7 @@ function createWindow() {
 //This util appends to a file
 async function writeToFS(message: string) {
   //If the message is not null?
-  const filename = 'test.txt'
+  const filename = 'files/new.json' //make this a param
   if (message.length > 0) {
     fs.appendFile(filename, message + '\n', err => {
       if (err) {
@@ -63,10 +63,6 @@ async function registerListeners() {
   /**
    * This comes from bridge integration, check bridge.ts
    */
-  // For Send Message function
-  // ipcMain.on('message', (_, message) => {
-  //   console.log('I RELOADED HOT' + message)
-  // })
 
   //writeToFS
   ipcMain.on('string_to_write', (_, message) => {
