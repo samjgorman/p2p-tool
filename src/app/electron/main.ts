@@ -1,7 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import Peer from 'simple-peer'
 import wrtc from 'wrtc'
-// const wrtc = require('wrtc')
 
 const fs = require('fs-extra')
 
@@ -44,10 +43,10 @@ function createWindow() {
   })
 }
 
-//This util appends to a file
+//  This util appends to a file
 async function writeToFS(message: string) {
-  //If the message is not null?
-  const filename = 'files/new.json' //make this a param
+  //  If the message is not null?
+  const filename = 'files/new.json' //  make this a param
   if (message.length > 0) {
     fs.appendFile(filename, message + '\n', err => {
       if (err) {
