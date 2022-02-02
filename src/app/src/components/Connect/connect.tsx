@@ -5,21 +5,24 @@ import React from "react";
 async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
     console.log(event.target[0].value)
     console.log(event.target[1].value)
-    //Send this information to the main thread to begin a webrtc connection
+    //  Send this information to the main thread to begin a webrtc connection
     const user = event.target[0].value
     const initiatorString = event.target[1].value
+    const recipient = event.target[2].value
+
     var initiator = false
     if(initiatorString == "send") initiator = true;
 
-    //Construct an object to send
-    const raw_peer_metadata = {
+    //  Construct an object to send
+    const rawPeerMetadata = {
         initiator: initiator,
         user: user, 
+        recipient: recipient
       }
 
-    const peer_metadata = JSON.stringify(raw_peer_metadata)
+    const peerMetadata = JSON.stringify(rawPeerMetadata)
 
-    window.Main.passPeerMetadata(peer_metadata );
+    window.Main.passPeerMetadata(peerMetadata );
 
 
 }
@@ -49,6 +52,8 @@ function Connect() {
                 <option value="send">Send an invite</option>
                 <option value="accept">Accept an invite</option>
             </select>
+            <input className="recipient-field" placeholder="Who are you connecting to?" required/>
+
             <input className="submit-connection-button" type="submit" value="Send" />
           </form>
         </div>

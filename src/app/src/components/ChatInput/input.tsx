@@ -21,7 +21,7 @@ async function handleMessage(event: React.FormEvent<HTMLFormElement>) {
     const payload = JSON.stringify(raw_payload)
     // const payload = constructJsonObj();
     window.Main.writeToFs( payload);
-    //Call some process in electron that lets me write to a file...
+    //  Call some process in electron that lets me write to a file...
 
 }
 
@@ -37,7 +37,7 @@ function Chat() {
 
     return (
         <div className="LiveChatMessageForm">
-            <div>This is a form</div>
+            <div>Send a chat message</div>
           <form
             className="liveChat-message-form"
             noValidate
