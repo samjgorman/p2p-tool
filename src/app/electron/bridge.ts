@@ -19,6 +19,10 @@ export const api = {
     ipcRenderer.send('string_to_write', string_to_write)
   },
 
+  passPeerMetadata: (peer_metadata: string) => {
+    ipcRenderer.send('peer_metadata', peer_metadata)
+  },
+
   /**
    * Provide an easier way to listen to events
    */

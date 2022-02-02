@@ -1,8 +1,11 @@
 module.exports = [
-  {
-    test: /\.node$/,
-    use: 'node-loader',
-  },
+  // Commenting out because this native module loader was breaking
+  // installation of native node modules like wrtc
+  // Reference:  https://stackoverflow.com/questions/65164434/electron-forge-v6-keytar-node-loader-error-no-suitable-image-found-file-t
+  // {
+  //   test: /\.node$/,
+  //   use: 'node-loader',
+  // },
   {
     test: /\.(m?js|node)$/,
     parser: { amd: false },
@@ -17,8 +20,8 @@ module.exports = [
     test: /\.(js|ts|tsx)$/,
     exclude: /node_modules/,
     use: {
-      loader: 'babel-loader'
-    }
+      loader: 'babel-loader',
+    },
   },
   {
     test: /\.(png|jpe?g|gif)$/i,
@@ -26,5 +29,5 @@ module.exports = [
     options: {
       name: '[path][name].[ext]',
     },
-  }
+  },
 ]

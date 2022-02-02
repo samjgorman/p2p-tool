@@ -5,6 +5,21 @@ import React from "react";
 async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
     console.log(event.target[0].value)
     console.log(event.target[1].value)
+    //Send this information to the main thread to begin a webrtc connection
+    const user = event.target[0].value
+    const initiatorString = event.target[1].value
+    var initiator = false
+    if(initiatorString == "send") initiator = true;
+
+    //Construct an object to send
+    const raw_peer_metadata = {
+        initiator: initiator,
+        user: user, 
+      }
+
+    const peer_metadata = JSON.stringify(raw_peer_metadata)
+
+    window.Main.passPeerMetadata(peer_metadata );
 
 
 }

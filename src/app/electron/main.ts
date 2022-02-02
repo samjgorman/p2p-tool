@@ -1,7 +1,11 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
+import Peer from 'simple-peer'
+import wrtc from 'wrtc'
+// const wrtc = require('wrtc')
+
 const fs = require('fs-extra')
 
-//Temp to write to fs
+// Temp to write to fs
 // fs.writeFile('test.txt', err => {
 //   if (err) {
 //     console.error(err)
@@ -59,6 +63,18 @@ async function writeToFS(message: string) {
     })
   }
 }
+
+function connect(name: string, initiator: boolean) {
+  const peer = new Peer({ initiator, wrtc: wrtc })
+}
+
+//This begins the webRTC connection process
+async function establishConnection(peer_metadata: string) {
+  //Unpack JSON string to an object
+  const peer_metadata_obj = JSON.parse(peer_metadata)
+  connect(peer_metadata_obj.user, peer_metadata_obj.initiator)
+}
+
 async function registerListeners() {
   /**
    * This comes from bridge integration, check bridge.ts
@@ -67,6 +83,11 @@ async function registerListeners() {
   //writeToFS
   ipcMain.on('string_to_write', (_, message) => {
     writeToFS(message)
+    console.log(message)
+  })
+
+  ipcMain.on('peer_metadata', (_, message) => {
+    establishConnection(message)
     console.log(message)
   })
 }
