@@ -3,7 +3,9 @@ import Peer from 'simple-peer'
 import wrtc from 'wrtc'
 import signalhub from 'signalhub'
 
-const fs = require('fs-extra')
+// const fs = require('fs-extra')
+
+import fs from 'fs-extra'
 
 // Temp to write to fs
 // fs.writeFile('test.txt', err => {
@@ -64,15 +66,27 @@ async function writeToFS(message: string) {
   }
 }
 
-function connect(name: string, initiator: boolean) {
+const hub = signalhub('p2p-tool', [
+  'http://localhost:8080/',
+  'https://evening-brook-96941.herokuapp.com/', //  This is a free Heroku instance I've spun up just for us.
+  'https://signalhub.herokuapp.com/', //  This is a backup public free Heroku instance.
+])
+
+async function connect(name: string, initiator: boolean) {
   const peer = new Peer({ initiator, wrtc: wrtc })
 
-  peer.on('signal', data => {
-    peer.signal(data)
+  peer.on('signal', function (data) {
+    hub.broadcast('my-channel', data)
   })
 
+  const stream = hub.subscribe('my-channel')
+  stream.on('data', message => {
+    peer.signal(message)
+    stream.destroy()
+  })
   //  Connection is successful
   peer.on('connect', () => {
+    console.log('Connected'!)
     peer.send('hey peer2, how is it going?')
   })
 
@@ -90,23 +104,33 @@ function connect(name: string, initiator: boolean) {
     console.log('Disconnected!')
   })
 }
+
 //  This function initiates a handshake to connect to a peer
 async function initiateHandshake(
   name: string,
   initiator: boolean,
   recipient: string
 ) {
-  const stream = hub.subscribe(name) //  Using name as a temp insecure channel
+  hub.subscribe('my-channel').on('data', function (message) {
+    console.log('new message received', message)
+  })
 
-  await new Promise<void>(resolve => {
-    stream.on('data', (message: string) => {
+  hub.broadcast('my-channel', { hello: 'world' })
+  const password = await new Promise<string>(resolve => {
+    const stream = hub.subscribe('my_channel') //  Using name as a temp insecure channel
+    stream.on('data', message => {
+      console.log('I  GOT DATA')
+      console.log(message)
       if (message === recipient) {
         console.log('Password matches')
+        stream.destroy()
+        resolve(message)
       } else {
         console.error('wrong invite password')
       }
     })
-    resolve()
+  }).catch(err => {
+    console.error(err)
   })
 
   hub.broadcast(name, recipient) // Channel name is name, password is recipient
@@ -118,36 +142,33 @@ async function acceptHandshake(
   initiator: boolean,
   recipient: string
 ) {
-  hub.broadcast(recipient, name)
+  hub.broadcast('my_channel', name)
   console.log('Sending invite response to', recipient)
-
   await new Promise<void>(resolve => {
-    const stream = hub.subscribe(recipient)
+    const stream = hub.subscribe('my_channel')
     stream.on('data', (message: string) => {
       if (message === name) {
         stream.destroy()
         resolve()
       }
     })
+  }).catch(err => {
+    console.error(err)
   })
 }
-const hub = signalhub('p2p-tool', [
-  'https://evening-brook-96941.herokuapp.com/', //  This is a free Heroku instance I've spun up just for us.
-  'https://signalhub.herokuapp.com/', //  This is a backup public free Heroku instance.
-])
 
 //  This begins the webRTC connection process
 async function establishConnection(peerMetadata: string) {
   //  Unpack JSON string to an object
   const peerMetadataObj = JSON.parse(peerMetadata)
   const initiator = peerMetadataObj.initiator
-  const name = peerMetadataObj.name
+  const name = peerMetadataObj.user
   const recipient = peerMetadataObj.recipient
 
-  if (peerMetadataObj.initiator) {
+  if (initiator) {
     initiateHandshake(name, initiator, recipient)
   } else {
-    acceptHandshake(name, initiator)
+    acceptHandshake(name, initiator, recipient)
   }
   //  Exchange signal data over signalhub
 

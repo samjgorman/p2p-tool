@@ -10,8 +10,8 @@ async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
     const initiatorString = event.target[1].value
     const recipient = event.target[2].value
 
-    var initiator = false
-    if(initiatorString == "send") initiator = true;
+    let initiator = false
+    if(initiatorString ==="send") initiator = true;
 
     //  Construct an object to send
     const rawPeerMetadata = {

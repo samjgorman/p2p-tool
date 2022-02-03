@@ -1,3 +1,4 @@
+import React from 'react';
 import { ReactNode, ButtonHTMLAttributes } from 'react'
 
 // import { Container } from './styles'
@@ -20,7 +21,7 @@ async function handleMessage(event: React.FormEvent<HTMLFormElement>) {
 
     const payload = JSON.stringify(raw_payload)
     // const payload = constructJsonObj();
-    window.Main.writeToFs( payload);
+    // window.Main.writeToFs( payload);
     //  Call some process in electron that lets me write to a file...
 
 }
