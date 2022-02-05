@@ -46,8 +46,8 @@
         [
           "@electron-forge/plugin-webpack",
           {
-            "port": "3001",
-            "loggerPort": "9001",
+            "port": "3000",
+            "loggerPort": "9000",
             "mainConfig": "./webpack.main.config.js",
             "renderer": {
               "config": "./webpack.renderer.config.js",
@@ -76,6 +76,7 @@
     "@electron-forge/plugin-webpack": "^6.0.0-beta.63",
     "@types/react": "^17.0.38",
     "@types/react-dom": "^17.0.11",
+    "@types/simple-peer": "^9.11.4",
     "@types/styled-components": "^5.1.21",
     "@typescript-eslint/eslint-plugin": "^5.10.2",
     "@typescript-eslint/parser": "^5.10.2",
@@ -92,9 +93,14 @@
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.0",
+    "fs-extra": "^10.0.0",
+    "node-pre-gyp": "^0.17.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "signalhub": "^4.9.0",
-    "styled-components": "^5.3.3"
+    "simple-peer": "^9.11.0",
+    "sodium-native": "^3.3.0",
+    "styled-components": "^5.3.3",
+    "wrtc": "^0.4.7"
   }
 }

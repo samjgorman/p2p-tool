@@ -1,10 +1,6 @@
 import React from 'react';
 import { ReactNode, ButtonHTMLAttributes } from 'react'
 
-// import { Container } from './styles'
-
-
-
 
 async function handleMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -15,15 +11,12 @@ async function handleMessage(event: React.FormEvent<HTMLFormElement>) {
     const raw_payload = {
       message: raw_message[0].value,
       timestamp: Date.now(), //new Date()
-      user: "Sam"
+      user: "Sam" //Temp value
 
     }
 
     const payload = JSON.stringify(raw_payload)
-    // const payload = constructJsonObj();
-    // window.Main.writeToFs( payload);
-    //  Call some process in electron that lets me write to a file...
-
+    window.Main.writeToFs( payload);
 }
 
 

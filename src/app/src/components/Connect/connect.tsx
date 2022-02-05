@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, {useState} from "react";
 
 
 async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
@@ -27,6 +27,8 @@ async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
 
 }
 
+
+
 /**
  * This component renders a single comment and should be used as a
  * child component to CommentLog.
@@ -34,8 +36,20 @@ async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
  * 
 **/
 
+
 function Connect() {
 
+  const [initiator, setInitiator] = useState(false);
+
+  function handleChoice(val:string){
+    if(val === "send"){
+      setInitiator(true);
+  
+    }
+    if(val === "accept"){
+      setInitiator(false);
+    }
+  }
     return (
         <div className="LiveChatMessageForm">
             <div>Begin a p2p connection</div>
@@ -47,15 +61,34 @@ function Connect() {
             }
           >
             <input className="username-field" placeholder="Choose a username" required/>
-            <select name="role" id="role-select" required>
+            <select name="role" id="role-select" onChange={(e) => handleChoice(e.target.value)} required>
                 <option value="">--Please choose an option--</option>
-                <option value="send">Send an invite</option>
-                <option value="accept">Accept an invite</option>
+                <option value="send" >Send an invite</option>
+                <option value="accept" onSelect={() => setInitiator(false)}> Accept an invite</option>
             </select>
-            <input className="recipient-field" placeholder="Who are you connecting to?" required/>
+
+            {initiator == true &&
+            <React.Fragment> 
+            <input className="initiator-field" placeholder="Who are you inviting?" required/>
+            </React.Fragment>
+
+            }   
+
+            {initiator == false &&
+            <React.Fragment> 
+            <input className="ninitiator-field" placeholder="Who are you accepting this invite from?" required/>
+            <input className="token-field" placeholder="What's the invite token?" required/>
+            </React.Fragment>
+            }  
+
 
             <input className="submit-connection-button" type="submit" value="Send" />
           </form>
+
+            {initiator && 
+          <div>Send this payload:  </div>
+            }
+
         </div>
       );
     }

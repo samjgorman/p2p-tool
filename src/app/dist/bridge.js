@@ -11,13 +11,10 @@ exports.api = {
      *
      * The function below can accessed using `window.Main.sendMessage`
      */
-    // sendMessage: (message: string) => {
-    //   ipcRenderer.send('message', message)
-    // },
-    // writeToFs: (string_to_write: string) => {
-    //   // console.log("I'll write to the fs one day!" + string_to_write)
-    //   ipcRenderer.send("string_to_write", string_to_write);
-    // },
+    writeToFs: function (string_to_write) {
+        // console.log("I'll write to the fs one day!" + string_to_write)
+        electron_1.ipcRenderer.send("string_to_write", string_to_write);
+    },
     passPeerMetadata: function (peer_metadata) {
         electron_1.ipcRenderer.send("peer_metadata", peer_metadata);
     },

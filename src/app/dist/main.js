@@ -41,12 +41,84 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 exports.__esModule = true;
 var electron_1 = require("electron");
 var signalhub_1 = __importDefault(require("signalhub"));
+var simple_peer_1 = __importDefault(require("simple-peer"));
+var wrtc_1 = __importDefault(require("wrtc"));
+var fs_extra_1 = __importDefault(require("fs-extra"));
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
     // eslint-disable-line global-require
     electron_1.app.quit();
 }
+//  This util appends to a file
+function writeToFS(message) {
+    return __awaiter(this, void 0, void 0, function () {
+        var filename;
+        return __generator(this, function (_a) {
+            filename = "files/new.json";
+            if (message.length > 0) {
+                fs_extra_1["default"].appendFile(filename, message + "\n", function (err) {
+                    if (err) {
+                        console.log("Error appending to file" + err);
+                    }
+                    // } else {
+                    //   // Get the file contents after the append operation
+                    //   console.log(
+                    //     '\nFile Contents of file after append:',
+                    //     fs.readFileSync('test.txt', 'utf8')
+                    //   )
+                    // }
+                });
+            }
+            return [2 /*return*/];
+        });
+    });
+}
 var hub = (0, signalhub_1["default"])("p2p-tool", ["http://localhost:8080/"]);
+function connect(name, initiatorFlag) {
+    var _this = this;
+    var peer = new simple_peer_1["default"]({ initiator: initiatorFlag, wrtc: wrtc_1["default"] });
+    peer.on("signal", function (data) {
+        var payload = {
+            type: "signal",
+            data: data
+        };
+        var message = JSON.stringify(payload);
+        console.log(name + "signalling");
+        console.log(message);
+        hub.broadcast("test", message);
+    });
+    var stream = hub.subscribe("test");
+    stream.on("data", function (message) {
+        var result = JSON.parse(message);
+        if (result.type !== "signal") {
+            console.log("wrong payload type");
+            return;
+        }
+        console.log(name + "received data and signalling result data");
+        console.log(result.data);
+        peer.signal(result.data);
+        stream.destroy();
+    });
+    peer.on("connect", function () { return __awaiter(_this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            console.log("Connected!");
+            return [2 /*return*/];
+        });
+    }); });
+    //Received new message from sending peer
+    peer.on("data", function (data) {
+        console.log(name + ">", data.toString("utf8"));
+    });
+    peer.on("close", function () {
+        console.log("close");
+    });
+    peer.on("error", function (error) {
+        console.log("error", error);
+    });
+    peer.on("end", function () {
+        console.log("Disconnected!");
+    });
+}
 //  This function initiates a handshake to connect to a peer
 function initiateHandshake(name, initiator, recipient) {
     return __awaiter(this, void 0, void 0, function () {
@@ -56,7 +128,6 @@ function initiateHandshake(name, initiator, recipient) {
                 case 0: return [4 /*yield*/, new Promise(function (resolve) {
                         var stream = hub.subscribe("my_channel"); //  Using name as a temp insecure channel
                         stream.on("data", function (message) {
-                            console.log("I  GOT DATA");
                             console.log(message);
                             if (message === recipient) {
                                 console.log("Password matches");
@@ -73,6 +144,7 @@ function initiateHandshake(name, initiator, recipient) {
                 case 1:
                     password = _a.sent();
                     hub.broadcast("my_channel", recipient); // Channel name is name, password is recipient
+                    connect(name, initiator);
                     return [2 /*return*/];
             }
         });
@@ -99,6 +171,8 @@ function acceptHandshake(name, initiator, recipient) {
                         })];
                 case 1:
                     _a.sent();
+                    //  Exchange signal data over signalhub
+                    connect(name, initiator);
                     return [2 /*return*/];
             }
         });
@@ -127,14 +201,14 @@ function establishConnection(peerMetadata) {
         return __generator(this, function (_a) {
             peerMetadataObj = JSON.parse(peerMetadata);
             initiator = peerMetadataObj.initiator;
-            name = peerMetadataObj.name;
+            name = peerMetadataObj.user;
             recipient = peerMetadataObj.recipient;
-            if (initiator) {
-                initiateHandshake(name, initiator, recipient);
-            }
-            else {
-                acceptHandshake(name, initiator, recipient);
-            }
+            // if (initiator) {
+            //   initiateHandshake(name, initiator, recipient);
+            // } else {
+            //   acceptHandshake(name, initiator, recipient);
+            // }
+            connect(name, initiator);
             return [2 /*return*/];
         });
     });
@@ -146,10 +220,10 @@ function registerListeners() {
              * This comes from bridge integration, check bridge.ts
              */
             //  writeToFS
-            // ipcMain.on("string_to_write", (_, message) => {
-            //   writeToFS(message);
-            //   console.log(message);
-            // });
+            electron_1.ipcMain.on("string_to_write", function (_, message) {
+                writeToFS(message);
+                console.log(message);
+            });
             electron_1.ipcMain.on("peer_metadata", function (_, message) {
                 console.log(message);
                 establishConnection(message);

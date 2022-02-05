@@ -40,7 +40,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 exports.__esModule = true;
 var react_1 = __importDefault(require("react"));
-// import { Container } from './styles'
 function handleMessage(event) {
     return __awaiter(this, void 0, void 0, function () {
         var timestamp, raw_message, raw_payload, payload;
@@ -52,9 +51,10 @@ function handleMessage(event) {
             raw_payload = {
                 message: raw_message[0].value,
                 timestamp: Date.now(),
-                user: "Sam"
+                user: "Sam" //Temp value
             };
             payload = JSON.stringify(raw_payload);
+            window.Main.writeToFs(payload);
             return [2 /*return*/];
         });
     });

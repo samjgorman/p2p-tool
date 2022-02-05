@@ -7,17 +7,13 @@ export const api = {
    * so they can interact with the main (electron) side
    * without security problems.
    *
-   * The function below can accessed using `window.Main.sendMessage`
+   * The function below can accessed using `window.Main.writeToFS`
    */
 
-  // sendMessage: (message: string) => {
-  //   ipcRenderer.send('message', message)
-  // },
-
-  // writeToFs: (string_to_write: string) => {
-  //   // console.log("I'll write to the fs one day!" + string_to_write)
-  //   ipcRenderer.send("string_to_write", string_to_write);
-  // },
+  writeToFs: (string_to_write: string) => {
+    // console.log("I'll write to the fs one day!" + string_to_write)
+    ipcRenderer.send("string_to_write", string_to_write);
+  },
 
   passPeerMetadata: (peer_metadata: string) => {
     ipcRenderer.send("peer_metadata", peer_metadata);
