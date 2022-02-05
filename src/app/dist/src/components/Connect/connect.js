@@ -1,4 +1,23 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35,27 +54,35 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 exports.__esModule = true;
-var react_1 = __importDefault(require("react"));
+var react_1 = __importStar(require("react"));
 function handleConnectInfo(event) {
     return __awaiter(this, void 0, void 0, function () {
-        var user, initiatorString, recipient, initiator, rawPeerMetadata, peerMetadata;
+        var initiatorString, initiator, data, recipient, invitedBy, inviteToken, rawPeerMetadata, peerMetadata;
         return __generator(this, function (_a) {
             console.log(event.target[0].value);
             console.log(event.target[1].value);
-            user = event.target[0].value;
             initiatorString = event.target[1].value;
-            recipient = event.target[2].value;
             initiator = false;
-            if (initiatorString === "send")
+            data = {
+                name: event.target[0].value
+            };
+            if (initiatorString === "send") {
                 initiator = true;
+                recipient = event.target[2].value //Recipient
+                ;
+                data["recipient"] = recipient;
+                //Schema: 
+            }
+            else {
+                invitedBy = event.target[2].value;
+                inviteToken = event.target[3].value;
+                data["invitedBy"] = invitedBy;
+                data["inviteToken"] = inviteToken;
+            }
             rawPeerMetadata = {
                 initiator: initiator,
-                user: user,
-                recipient: recipient
+                data: data
             };
             peerMetadata = JSON.stringify(rawPeerMetadata);
             window.Main.passPeerMetadata(peerMetadata);
@@ -70,18 +97,47 @@ function handleConnectInfo(event) {
  *
 **/
 function Connect() {
+    var _a = (0, react_1.useState)(false), initiator = _a[0], setInitiator = _a[1];
+    var _b = (0, react_1.useState)(0), token = _b[0], setToken = _b[1];
+    function handleChoice(val) {
+        if (val === "send") {
+            setInitiator(true);
+            window.Main.sendInviteToken("Requested token");
+        }
+        if (val === "accept") {
+            setInitiator(false);
+        }
+    }
+    (0, react_1.useEffect)(function () {
+        // Listen for the event
+        //Find way to listen for API
+        window.Main.on("generate_token", function (event, val) {
+            setToken(val);
+        });
+    }, []);
     return (react_1["default"].createElement("div", { className: "LiveChatMessageForm" },
         react_1["default"].createElement("div", null, "Begin a p2p connection"),
         react_1["default"].createElement("form", { className: "liveChat-message-form", autoComplete: "off", onSubmit: function (event) {
                 return handleConnectInfo(event);
             } },
             react_1["default"].createElement("input", { className: "username-field", placeholder: "Choose a username", required: true }),
-            react_1["default"].createElement("select", { name: "role", id: "role-select", required: true },
+            react_1["default"].createElement("select", { name: "role", id: "role-select", onChange: function (e) { return handleChoice(e.target.value); }, required: true },
                 react_1["default"].createElement("option", { value: "" }, "--Please choose an option--"),
                 react_1["default"].createElement("option", { value: "send" }, "Send an invite"),
-                react_1["default"].createElement("option", { value: "accept" }, "Accept an invite")),
-            react_1["default"].createElement("input", { className: "recipient-field", placeholder: "Who are you connecting to?", required: true }),
-            react_1["default"].createElement("input", { className: "submit-connection-button", type: "submit", value: "Send" }))));
+                react_1["default"].createElement("option", { value: "accept", onSelect: function () { return setInitiator(false); } }, " Accept an invite")),
+            initiator == true &&
+                react_1["default"].createElement(react_1["default"].Fragment, null,
+                    react_1["default"].createElement("input", { className: "initiator-field", placeholder: "Who are you inviting?", required: true })),
+            initiator == false &&
+                react_1["default"].createElement(react_1["default"].Fragment, null,
+                    react_1["default"].createElement("input", { className: "ninitiator-field", placeholder: "Who are you accepting this invite from?", required: true }),
+                    react_1["default"].createElement("input", { className: "token-field", placeholder: "What's the invite token?", required: true })),
+            react_1["default"].createElement("input", { className: "submit-connection-button", type: "submit", value: "Send" })),
+        initiator &&
+            react_1["default"].createElement("div", null,
+                "Send this payload: ",
+                token,
+                " ")));
 }
 exports["default"] = Connect;
 //# sourceMappingURL=connect.js.map

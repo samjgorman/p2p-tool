@@ -9,8 +9,11 @@ exports.api = {
      * so they can interact with the main (electron) side
      * without security problems.
      *
-     * The function below can accessed using `window.Main.sendMessage`
+     * The function below can accessed using `window.Main.writeToFS`
      */
+    sendInviteToken: function (val) {
+        electron_1.ipcRenderer.send("generate_token");
+    },
     writeToFs: function (string_to_write) {
         // console.log("I'll write to the fs one day!" + string_to_write)
         electron_1.ipcRenderer.send("string_to_write", string_to_write);

@@ -1,4 +1,23 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -44,10 +63,15 @@ var signalhub_1 = __importDefault(require("signalhub"));
 var simple_peer_1 = __importDefault(require("simple-peer"));
 var wrtc_1 = __importDefault(require("wrtc"));
 var fs_extra_1 = __importDefault(require("fs-extra"));
+var path = __importStar(require("path"));
+var crypto_1 = require("./crypto");
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
     // eslint-disable-line global-require
     electron_1.app.quit();
+}
+function getPublicKeyId(publicKey) {
+    return (0, crypto_1.createHash)(publicKey).toString("base64");
 }
 //  This util appends to a file
 function writeToFS(message) {
@@ -73,6 +97,47 @@ function writeToFS(message) {
         });
     });
 }
+function generateKeys(identity) {
+    return __awaiter(this, void 0, void 0, function () {
+        var identityPath, publicKeyPath, secretKeyPath, me;
+        var _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    identityPath = path.join(__dirname, "..", "identities", identity);
+                    console.log(identityPath);
+                    return [4 /*yield*/, fs_extra_1["default"].mkdirp(identityPath)];
+                case 1:
+                    _b.sent();
+                    publicKeyPath = path.join(identityPath, "public.key");
+                    secretKeyPath = path.join(identityPath, "secret.key");
+                    return [4 /*yield*/, fs_extra_1["default"].pathExists(publicKeyPath)];
+                case 2:
+                    if (!!(_b.sent())) return [3 /*break*/, 5];
+                    console.log("Generating keys.");
+                    me = (0, crypto_1.createKeys)();
+                    return [4 /*yield*/, fs_extra_1["default"].writeFile(publicKeyPath, me.publicKey)];
+                case 3:
+                    _b.sent();
+                    return [4 /*yield*/, fs_extra_1["default"].writeFile(secretKeyPath, me.secretKey)];
+                case 4:
+                    _b.sent();
+                    return [3 /*break*/, 8];
+                case 5:
+                    _a = {};
+                    return [4 /*yield*/, fs_extra_1["default"].readFile(publicKeyPath)];
+                case 6:
+                    _a.publicKey = _b.sent();
+                    return [4 /*yield*/, fs_extra_1["default"].readFile(secretKeyPath)];
+                case 7:
+                    me = (_a.secretKey = _b.sent(),
+                        _a);
+                    _b.label = 8;
+                case 8: return [2 /*return*/, me];
+            }
+        });
+    });
+}
 var hub = (0, signalhub_1["default"])("p2p-tool", ["http://localhost:8080/"]);
 function connect(name, initiatorFlag) {
     var _this = this;
@@ -87,18 +152,21 @@ function connect(name, initiatorFlag) {
         console.log(message);
         hub.broadcast("test", message);
     });
-    var stream = hub.subscribe("test");
-    stream.on("data", function (message) {
-        var result = JSON.parse(message);
-        if (result.type !== "signal") {
-            console.log("wrong payload type");
-            return;
-        }
-        console.log(name + "received data and signalling result data");
-        console.log(result.data);
-        peer.signal(result.data);
-        stream.destroy();
-    });
+    if (!initiatorFlag) {
+        var stream_1 = hub.subscribe("test");
+        console.log(name + "subscribed to updates");
+        stream_1.on("data", function (message) {
+            var result = JSON.parse(message).toString("utf8");
+            if (result.type !== "signal") {
+                console.log("wrong payload type");
+                return;
+            }
+            console.log(name + "received data and signalling result data");
+            console.log(result.data);
+            peer.signal(result.data);
+            stream_1.destroy();
+        });
+    }
     peer.on("connect", function () { return __awaiter(_this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             console.log("Connected!");
@@ -119,60 +187,130 @@ function connect(name, initiatorFlag) {
         console.log("Disconnected!");
     });
 }
+// function generateInviteToken(me: Keys): string {
+//   // Create an invite payload
+//   const password = randomBytes(32);
+//   const invite = Buffer.concat([password, me.publicKey]).toString("base64");
+//   console.log(`Send this payload:`);
+//   console.log(invite);
+//   return invite;
+// }
 //  This function initiates a handshake to connect to a peer
-function initiateHandshake(name, initiator, recipient) {
+function initiateHandshake(me, //TODO: better way to pass around keys
+name, initiator, recipient) {
     return __awaiter(this, void 0, void 0, function () {
-        var password;
+        var password, invite, publicKey, message, payload, channelMessage;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, new Promise(function (resolve) {
-                        var stream = hub.subscribe("my_channel"); //  Using name as a temp insecure channel
-                        stream.on("data", function (message) {
-                            console.log(message);
-                            if (message === recipient) {
-                                console.log("Password matches");
-                                stream.destroy();
-                                resolve(message);
-                            }
-                            else {
-                                console.error("wrong invite password");
-                            }
-                        });
-                    })["catch"](function (err) {
-                        console.error(err);
-                    })];
+                case 0:
+                    password = (0, crypto_1.randomBytes)(32);
+                    invite = Buffer.concat([password, me.publicKey]).toString("base64");
+                    electron_1.ipcMain.on("generate_token", function (event, message) {
+                        event.sender.send("generate_token", invite);
+                    });
+                    return [4 /*yield*/, new Promise(function (resolve) {
+                            var stream = hub.subscribe(getPublicKeyId(me.publicKey));
+                            stream.on("data", function (message) {
+                                if (message.type === "seal") {
+                                    var data = (0, crypto_1.sealOpen)({
+                                        payload: Buffer.from(message.payload, "base64"),
+                                        to: me
+                                    });
+                                    var result = JSON.parse(data.toString("utf8"));
+                                    if (result.type === "invite") {
+                                        if (result.password === password.toString("base64")) {
+                                            stream.destroy();
+                                            resolve(Buffer.from(result.publicKey, "base64"));
+                                        }
+                                        else {
+                                            console.error("wrong invite password");
+                                        }
+                                    }
+                                    else {
+                                        console.error("wrong public channel payload type");
+                                    }
+                                }
+                                else {
+                                    console.error("wrong public channel message type");
+                                }
+                            });
+                        })];
                 case 1:
-                    password = _a.sent();
-                    hub.broadcast("my_channel", recipient); // Channel name is name, password is recipient
-                    connect(name, initiator);
+                    publicKey = _a.sent();
+                    message = {
+                        type: "invite-ack"
+                    };
+                    payload = (0, crypto_1.box)({
+                        message: Buffer.from(JSON.stringify(message), "utf8"),
+                        from: me,
+                        to: { publicKey: publicKey }
+                    });
+                    channelMessage = {
+                        type: "box",
+                        from: getPublicKeyId(me.publicKey),
+                        payload: payload.toString("base64")
+                    };
+                    hub.broadcast(getPublicKeyId(publicKey), channelMessage);
                     return [2 /*return*/];
             }
         });
     });
 }
 //  This function accepts a handshake to connect to a peer
-function acceptHandshake(name, initiator, recipient) {
+function acceptHandshake(me, name, initiator, invitedBy, inviteToken) {
     return __awaiter(this, void 0, void 0, function () {
+        var token, password, publicKey, message, payload, channelMessage;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    hub.broadcast("my_channel", name);
-                    console.log("Sending invite response to", recipient);
+                    token = Buffer.from(inviteToken.trim(), "base64");
+                    password = token.slice(0, 32).toString("base64");
+                    publicKey = token.slice(32);
+                    message = {
+                        type: "invite",
+                        password: password,
+                        publicKey: me.publicKey.toString("base64")
+                    };
+                    payload = (0, crypto_1.seal)({
+                        message: Buffer.from(JSON.stringify(message), "utf8"),
+                        to: { publicKey: publicKey }
+                    });
+                    channelMessage = {
+                        type: "seal",
+                        payload: payload.toString("base64")
+                    };
+                    console.log("Sending invite response to", invitedBy);
+                    hub.broadcast(getPublicKeyId(publicKey), channelMessage);
                     return [4 /*yield*/, new Promise(function (resolve) {
-                            var stream = hub.subscribe("my_channel");
+                            var stream = hub.subscribe(getPublicKeyId(me.publicKey));
                             stream.on("data", function (message) {
-                                if (message === name) {
-                                    stream.destroy();
-                                    resolve();
+                                if (message.type === "box") {
+                                    if (message.from === getPublicKeyId(publicKey)) {
+                                        var data = (0, crypto_1.boxOpen)({
+                                            payload: Buffer.from(message.payload, "base64"),
+                                            from: { publicKey: publicKey },
+                                            to: me
+                                        });
+                                        var result = JSON.parse(data.toString("utf8"));
+                                        if (result.type === "invite-ack") {
+                                            stream.destroy();
+                                            resolve();
+                                        }
+                                        else {
+                                            console.error("wrong payload type");
+                                        }
+                                    }
+                                    else {
+                                        console.error("message from the wrong person");
+                                    }
+                                }
+                                else {
+                                    console.error("wrong public channel message type");
                                 }
                             });
-                        })["catch"](function (err) {
-                            console.error(err);
                         })];
                 case 1:
                     _a.sent();
-                    //  Exchange signal data over signalhub
-                    connect(name, initiator);
                     return [2 /*return*/];
             }
         });
@@ -181,8 +319,9 @@ function acceptHandshake(name, initiator, recipient) {
 var createWindow = function () {
     // Create the browser window.
     var mainWindow = new electron_1.BrowserWindow({
-        height: 600,
-        width: 800,
+        width: 1100,
+        height: 700,
+        backgroundColor: "#191622",
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -197,19 +336,32 @@ var createWindow = function () {
 //  This begins the webRTC connection process
 function establishConnection(peerMetadata) {
     return __awaiter(this, void 0, void 0, function () {
-        var peerMetadataObj, initiator, name, recipient;
+        var peerMetadataObj, initiator, name, mykeys, recipient, invitedBy, inviteToken;
         return __generator(this, function (_a) {
-            peerMetadataObj = JSON.parse(peerMetadata);
-            initiator = peerMetadataObj.initiator;
-            name = peerMetadataObj.user;
-            recipient = peerMetadataObj.recipient;
-            // if (initiator) {
-            //   initiateHandshake(name, initiator, recipient);
-            // } else {
-            //   acceptHandshake(name, initiator, recipient);
-            // }
-            connect(name, initiator);
-            return [2 /*return*/];
+            switch (_a.label) {
+                case 0:
+                    peerMetadataObj = JSON.parse(peerMetadata);
+                    initiator = peerMetadataObj.initiator;
+                    name = peerMetadataObj.data.name;
+                    return [4 /*yield*/, generateKeys(name)];
+                case 1:
+                    mykeys = _a.sent();
+                    // ipcMain.on("generate_token", (event, message) => {
+                    //   const invite = generateInviteToken(mykeys);
+                    //   event.sender.send("generate_token", invite);
+                    // });
+                    if (initiator) {
+                        recipient = peerMetadataObj.data.recipient;
+                        initiateHandshake(mykeys, name, initiator, recipient);
+                    }
+                    else {
+                        invitedBy = peerMetadataObj.data.invitedBy;
+                        inviteToken = peerMetadataObj.data.inviteToken;
+                        acceptHandshake(mykeys, name, initiator, invitedBy, inviteToken);
+                    }
+                    connect(name, initiator);
+                    return [2 /*return*/];
+            }
         });
     });
 }

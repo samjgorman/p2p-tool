@@ -1,30 +1,37 @@
 
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 
 
 async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
     console.log(event.target[0].value)
     console.log(event.target[1].value)
     //  Send this information to the main thread to begin a webrtc connection
-    const user = event.target[0].value
     const initiatorString = event.target[1].value
-    const recipient = event.target[2].value
 
     let initiator = false
-    if(initiatorString ==="send") initiator = true;
+    const data = {
+      name: event.target[0].value
+    }
+    if(initiatorString ==="send"){
+      initiator = true;
+      const recipient = event.target[2].value //Recipient
+      data["recipient"] = recipient
+      //Schema: 
+    }else{
+      const invitedBy = event.target[2].value
+      const inviteToken = event.target[3].value
+      data["invitedBy"] = invitedBy
+      data["inviteToken"] = inviteToken
+    }
 
     //  Construct an object to send
     const rawPeerMetadata = {
         initiator: initiator,
-        user: user, 
-        recipient: recipient
+        data: data
       }
 
     const peerMetadata = JSON.stringify(rawPeerMetadata)
-
     window.Main.passPeerMetadata(peerMetadata );
-
-
 }
 
 
@@ -40,16 +47,31 @@ async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
 function Connect() {
 
   const [initiator, setInitiator] = useState(false);
+  const [token, setToken] = useState(0);
+
 
   function handleChoice(val:string){
     if(val === "send"){
       setInitiator(true);
+      window.Main.sendInviteToken("Requested token");
   
     }
     if(val === "accept"){
       setInitiator(false);
     }
   }
+
+  useEffect(() => {
+    // Listen for the event
+    //Find way to listen for API
+    window.Main.on("generate_token", (event, val) => {
+      setToken(val);
+      console.log(val)
+      //Finish this
+    });
+   
+  }, []);
+
     return (
         <div className="LiveChatMessageForm">
             <div>Begin a p2p connection</div>
@@ -86,7 +108,7 @@ function Connect() {
           </form>
 
             {initiator && 
-          <div>Send this payload:  </div>
+          <div>Send this payload: {token} </div>
             }
 
         </div>

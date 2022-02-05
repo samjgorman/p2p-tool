@@ -95,6 +95,7 @@
     "electron-squirrel-startup": "^1.0.0",
     "fs-extra": "^10.0.0",
     "node-pre-gyp": "^0.17.0",
+    "path": "^0.12.7",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "signalhub": "^4.9.0",

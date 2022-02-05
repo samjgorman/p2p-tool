@@ -10,6 +10,10 @@ export const api = {
    * The function below can accessed using `window.Main.writeToFS`
    */
 
+  sendInviteToken: (val: string) => {
+    ipcRenderer.send("generate_token");
+  },
+
   writeToFs: (string_to_write: string) => {
     // console.log("I'll write to the fs one day!" + string_to_write)
     ipcRenderer.send("string_to_write", string_to_write);
