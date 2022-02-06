@@ -74,7 +74,6 @@ function Connect() {
 
     return (
         <div className="LiveChatMessageForm">
-            <div>Begin a p2p connection</div>
           <form
             className="liveChat-message-form"
             autoComplete="off"

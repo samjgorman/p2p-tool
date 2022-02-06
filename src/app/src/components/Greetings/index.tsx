@@ -12,7 +12,7 @@ export function Greetings() {
   return (
     <Container>
   
-      <Text>Demo of a p2p chat application</Text>
+      <Text>P2P Chat Demo</Text>
       <Connect/>
       <Chat/>
     </Container>

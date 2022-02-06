@@ -56,26 +56,6 @@ type Keys = {
   secretKey: Buffer;
 };
 
-//  This util appends to a file
-async function writeToFS(message: string) {
-  //  If the message is not null?
-  const filename = "files/new.json"; //  make this a param
-  if (message.length > 0) {
-    fs.appendFile(filename, message + "\n", (err) => {
-      if (err) {
-        console.log("Error appending to file" + err);
-      }
-      // } else {
-      //   // Get the file contents after the append operation
-      //   console.log(
-      //     '\nFile Contents of file after append:',
-      //     fs.readFileSync('test.txt', 'utf8')
-      //   )
-      // }
-    });
-  }
-}
-
 async function generateKeys(identity: string): Promise<Keys> {
   //TODO: don't write this to the hidden webpack dir
   const identityPath = path.join(__dirname, "..", "identities", identity);
@@ -102,48 +82,158 @@ async function generateKeys(identity: string): Promise<Keys> {
   return me;
 }
 
-const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
-function connect(name: string, initiatorFlag: boolean) {
-  const peer = new Peer({ initiator: initiatorFlag, wrtc: wrtc });
+//  This util appends to a file
+async function writeToFS(fileNamePath: string, message: string) {
+  if (message.length > 0) {
+    fs.appendFile(fileNamePath, message + "\n", (err) => {
+      if (err) {
+        console.log("Error appending to file" + err);
+      }
+      // } else {
+      //   // Get the file contents after the append operation
+      //   console.log(
+      //     '\nFile Contents of file after append:',
+      //     fs.readFileSync('test.txt', 'utf8')
+      //   )
+      // }
+    });
+  }
+}
 
-  peer.on("signal", function (data: object) {
+async function buildChatDir(identity: string, name: string): Promise<string> {
+  const dirName = identity + "_" + name;
+  const chatPath = path.join(__dirname, "..", "chats", dirName);
+  await fs.mkdirp(chatPath);
+
+  // const fileName =
+  // 	identity + "_" + name + "_" + Date.now().toString() + ".json"
+  const fileName = identity + "_" + name + "_" + ".json";
+
+  const chatSessionPath = path.join(chatPath, fileName);
+
+  //If file has not already been created, create it
+  if (!(await fs.pathExists(chatSessionPath))) {
+    //check if opposite path exists too
+    console.log("Generating unique chat file.");
+    const first_val = JSON.stringify({ "Hello!": "Hi" });
+
+    fs.open(chatSessionPath, "wx", function (err, fd) {
+      //Wx flag creates empty file async
+      // handle error
+      fs.close(fd, function (err) {
+        // handle error and close fd
+      });
+    });
+    // await fs.writeFile(chatSessionPath, first_val) //Start with public key?
+  }
+
+  return chatSessionPath;
+}
+
+function formatMessageToStringifiedLog(
+  identity: string,
+  message: string
+): string {
+  const log = {
+    timestamp: Date.now(),
+    sender: identity,
+    message: message, //Check this
+  };
+  const stringified_log = JSON.stringify(log);
+  return stringified_log;
+}
+
+const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
+/**
+ * Connect
+ * @param identity  -> String identity of the sender of the message
+ * @param name  -> String Name of the recipient of the message
+ * @param initiator -> Bool representing if initiator of the wrtc connection
+ */
+function connect(
+  me: Keys,
+  identity: string,
+  name: string,
+  initiator: boolean,
+  friends: Record<string, string>
+) {
+  //Get public key of recipient of message
+  const publicKey = Buffer.from(friends[name], "base64");
+  console.log("Public key of recipient");
+  console.log(friends[name]);
+  const peer = new Peer({ initiator, wrtc: wrtc });
+  peer.on("signal", function (data) {
     const payload: PeerSignal = {
       type: "signal",
       data: data,
     };
-
-    const message = JSON.stringify(payload);
-    console.log(name + "signalling");
-    console.log(message);
-    hub.broadcast("test", message);
+    const message: PublicChannelMessage = {
+      type: "box",
+      from: getPublicKeyId(me.publicKey),
+      payload: box({
+        message: Buffer.from(JSON.stringify(payload), "utf8"),
+        from: me,
+        to: { publicKey },
+      }).toString("base64"),
+    };
+    hub.broadcast(getPublicKeyId(publicKey), message);
   });
 
-  if (!initiatorFlag) {
-    const stream = hub.subscribe("test");
-    console.log(name + "subscribed to updates");
+  const stream = hub.subscribe(getPublicKeyId(me.publicKey));
+  stream.on("data", (message: PublicChannelMessage) => {
+    if (message.type !== "box") {
+      console.error("Wrong message type");
+      return;
+    }
+    if (message.from !== getPublicKeyId(publicKey)) {
+      console.log("Wrong person");
+      return;
+    }
+    const result: PublicChannelMessagePayload = JSON.parse(
+      boxOpen({
+        payload: Buffer.from(message.payload, "base64"),
+        from: { publicKey },
+        to: me,
+      }).toString("utf8")
+    );
 
-    stream.on("data", (message: string) => {
-      const result = JSON.parse(message).toString("utf8");
-      if (result.type !== "signal") {
-        console.log("wrong payload type");
-        return;
-      }
-      console.log(name + "received data and signalling result data");
-      console.log(result.data);
+    if (result.type !== "signal") {
+      console.log("wrong payload type");
+      return;
+    }
 
-      peer.signal(result.data);
-      stream.destroy();
-    });
-  }
+    peer.signal(result.data);
+    stream.destroy();
+  });
 
   peer.on("connect", async () => {
     console.log("Connected!");
+
     //A chat session begins
+    // while (true) {
+    //   const { message } = await inquirer.prompt([
+    //     { type: "input", name: "message", message: "me>" },
+    //   ]);
+    //   console.log("this is message");
+    //   console.log(message);
+    //   console.log("this is message.name");
+    //   console.log(message.name);
+
+    //   const log = formatMessageToStringifiedLog(identity, message); //Check this
+    //   const chatSessionPath = await buildChatDir(identity, name);
+    //   writeToFS(chatSessionPath, log);
+    //   peer.send(message);
+    //   //Send a peer a message, write this message to the local fs
+    // }
   });
 
   //Received new message from sending peer
-  peer.on("data", (data) => {
+  peer.on("data", async (data) => {
     console.log(name + ">", data.toString("utf8"));
+    //Received message from peer, write this to the local fs
+    const log = formatMessageToStringifiedLog(identity, data.toString("utf8")); //Check this
+    const chatSessionPath = await buildChatDir(identity, name);
+    writeToFS(chatSessionPath, log);
   });
   peer.on("close", () => {
     console.log("close");
@@ -171,13 +261,18 @@ async function initiateHandshake(
   me: Keys, //TODO: better way to pass around keys
   name: string,
   initiator: boolean,
-  recipient: string
+  recipient: string,
+  friends: Record<string, string>,
+  friendsPath: string
 ) {
   const password = randomBytes(32);
   const invite = Buffer.concat([password, me.publicKey]).toString("base64");
-  ipcMain.on("generate_token", (event, message) => {
-    event.sender.send("generate_token", invite);
-  });
+  // ipcMain.on("generate_token", (event, message) => {
+  //   event.sender.send("generate_token", invite);
+  // });
+  // Create an invite payload
+  console.log(`Send this payload to ${recipient}:`);
+  console.log(invite);
 
   const publicKey = await new Promise<Buffer>((resolve) => {
     const stream = hub.subscribe(getPublicKeyId(me.publicKey));
@@ -193,6 +288,8 @@ async function initiateHandshake(
         );
         if (result.type === "invite") {
           if (result.password === password.toString("base64")) {
+            console.log("Passwords match");
+
             stream.destroy();
             resolve(Buffer.from(result.publicKey, "base64"));
           } else {
@@ -221,6 +318,12 @@ async function initiateHandshake(
     payload: payload.toString("base64"),
   };
   hub.broadcast(getPublicKeyId(publicKey), channelMessage);
+
+  friends[recipient] = publicKey.toString("base64"); //this should be recipient?
+  await fs.writeJSON(friendsPath, friends);
+
+  //Now that encryption matches, attempt to connect
+  connect(me, name, recipient, initiator, friends);
 }
 
 //  This function accepts a handshake to connect to a peer
@@ -229,7 +332,9 @@ async function acceptHandshake(
   name: string,
   initiator: boolean,
   invitedBy: string,
-  inviteToken: string
+  inviteToken: string,
+  friends: Record<string, string>,
+  friendsPath: string
 ) {
   const token = Buffer.from(inviteToken.trim(), "base64");
   const password = token.slice(0, 32).toString("base64");
@@ -266,6 +371,7 @@ async function acceptHandshake(
             data.toString("utf8")
           );
           if (result.type === "invite-ack") {
+            console.log("Void promise resolved");
             stream.destroy();
             resolve();
           } else {
@@ -279,6 +385,12 @@ async function acceptHandshake(
       }
     });
   });
+
+  friends[invitedBy] = publicKey.toString("base64");
+  await fs.writeJSON(friendsPath, friends);
+
+  //Now that encryption matches, attempt to connect
+  connect(me, name, invitedBy, initiator, friends);
 }
 
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -318,19 +430,32 @@ async function establishConnection(peerMetadata: string) {
   //   event.sender.send("generate_token", invite);
   // });
 
+  //TODO: refactor
+  const identityPath = path.join(__dirname, "..", "identities", name);
+  const friendsPath = path.join(identityPath, "friends.json");
+  let friends: Record<string, string> = {};
+  if (await fs.pathExists(friendsPath)) {
+    friends = await fs.readJSON(friendsPath);
+  }
+
   if (initiator) {
     //Send generated token to client to render
-
     const recipient = peerMetadataObj.data.recipient;
-    initiateHandshake(mykeys, name, initiator, recipient);
+    initiateHandshake(mykeys, name, initiator, recipient, friends, friendsPath);
   } else {
     const invitedBy = peerMetadataObj.data.invitedBy;
     const inviteToken = peerMetadataObj.data.inviteToken;
 
-    acceptHandshake(mykeys, name, initiator, invitedBy, inviteToken);
+    acceptHandshake(
+      mykeys,
+      name,
+      initiator,
+      invitedBy,
+      inviteToken,
+      friends,
+      friendsPath
+    );
   }
-
-  connect(name, initiator);
 }
 
 async function registerListeners() {
