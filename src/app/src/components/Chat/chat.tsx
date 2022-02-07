@@ -32,6 +32,7 @@ import ChatMessage from "../ChatMessage/message";
           const newState = [...messagesToRenderStack, messageObjToRender];
           setMessagesToRenderStack(newState)
           setStackPopulated(true)
+
       })
 
       window.Main.on("peer_submitted_message", (event,arg) =>{
@@ -41,9 +42,14 @@ import ChatMessage from "../ChatMessage/message";
         const newState = [...messagesToRenderStack, messageObjToRender];
         setMessagesToRenderStack(newState)
         setStackPopulated(true)
-
-
     })
+
+    return function cleanup() {
+        window.Main.removeAllListeners("client_submitted_message")
+        window.Main.removeAllListeners("peer_submitted_message")
+
+        
+       };
 
     });
 

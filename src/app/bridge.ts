@@ -29,6 +29,12 @@ export const api = {
   on: (channel: string, callback: Function) => {
     ipcRenderer.on(channel, (_, data) => callback(data));
   },
+
+  //Unsubsribe from a channel
+
+  removeAllListeners: (channel: string) => {
+    ipcRenderer.removeAllListeners(channel);
+  },
 };
 
 contextBridge.exposeInMainWorld("Main", api);
