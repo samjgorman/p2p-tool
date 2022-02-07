@@ -235,22 +235,23 @@ function connect(
       const log = formatMessageToStringifiedLog(identity, message); //Check this
       const chatSessionPath = await buildChatDir(identity, name);
       writeToFS(chatSessionPath, log);
-      peer.send(message); //Send the client submitted message to the peer
-
+      peer.send(log); //Send the client submitted message to the peer
+      //Should I be sending the log?
       //SEND the message back to the renderer process?
-      event.reply("client_submitted_message", message);
+      event.reply("client_submitted_message", log);
     }); //TODO: check the async callback is allowed...
   });
 
   //Received new message from sending peer
   peer.on("data", async (data) => {
+    const receivedLog = data.toString("utf8");
     console.log(name + ">", data.toString("utf8"));
     //Received message from peer, write this to the local fs
-    const log = formatMessageToStringifiedLog(identity, data.toString("utf8")); //Check this
+    // const log = formatMessageToStringifiedLog(identity, data.toString("utf8")); //Check this
     const chatSessionPath = await buildChatDir(identity, name);
-    writeToFS(chatSessionPath, log);
+    writeToFS(chatSessionPath, receivedLog);
 
-    window.webContents.send("peer_submitted_message", log);
+    window.webContents.send("peer_submitted_message", receivedLog);
     //Send directly to IPCrenderer
 
     //T0D0:  Send this message to the IPCRenderer process to render

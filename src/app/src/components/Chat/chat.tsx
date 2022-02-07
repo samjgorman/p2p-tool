@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import ChatInput from "../ChatInput/input";
 import ChatMessage from "../ChatMessage/message";
 
@@ -13,6 +13,12 @@ import ChatMessage from "../ChatMessage/message";
  function Chat(props) {
    
     //Read from merged file (for now, new.txt)
+
+    const [stackPopulated, setStackPopulated] = useState(false);
+    const [messagesToRenderStack, setMessagesToRenderStack] = useState([]);
+
+
+
   
     useEffect(() => {
     //   let div = document.getElementsByClassName("LiveChat")[0];
@@ -22,17 +28,44 @@ import ChatMessage from "../ChatMessage/message";
       window.Main.on("client_submitted_message", (event,arg) =>{
           console.log("Chat object received")
           console.log(event) 
+          const messageObjToRender = JSON.parse(event)
+          const newState = [...messagesToRenderStack, messageObjToRender];
+          setMessagesToRenderStack(newState)
+          setStackPopulated(true)
       })
 
       window.Main.on("peer_submitted_message", (event,arg) =>{
         console.log("Chat object received from peer")
         console.log(event) 
+        const messageObjToRender = JSON.parse(event)
+        const newState = [...messagesToRenderStack, messageObjToRender];
+        setMessagesToRenderStack(newState)
+        setStackPopulated(true)
+
+
     })
 
     });
+
+    console.log(messagesToRenderStack.length)
+    console.log("one object");
+
+    console.log(messagesToRenderStack[0]);
+    //TODO: Add a type here...
   
     return (
       <div className="LiveChat">
+          {stackPopulated &&
+           messagesToRenderStack.map((chatMessage, i) => (
+              <ChatMessage
+                key={i}
+                chatMessage={chatMessage.message}
+                timestamp={chatMessage.timestamp}
+                sender= {chatMessage.sender}
+              />
+            ))
+          }
+
           <ChatInput></ChatInput>
       </div>
     );

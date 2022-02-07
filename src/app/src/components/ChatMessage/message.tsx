@@ -13,17 +13,19 @@ import React from "react";
  */
 
  function ChatMessage(props) { //refactor for TS 
+
     return (
       <div className="LiveChatMessage">
           
-            <h4 className="message-owner">{props.liveChatMessage.username}</h4>
+            <h4 className="message-owner">{props.sender}</h4>
             <div className="UserAndText">
               <p className="message-text">
-                {props.text}
+                {props.chatMessage}
               </p>
-              {/* <p className="message-time">
-                {timeSince(props.liveChatMessage.time_sent.seconds)}
-              </p> */}
+              <p className="message-time">
+                {props.timestamp}
+                {/* {timeSince(props.liveChatMessage.time_sent.seconds)} */}
+              </p>
             </div>
 
       </div>
