@@ -153,7 +153,8 @@ function connect(
   identity: string,
   name: string,
   initiator: boolean,
-  friends: Record<string, string>
+  friends: Record<string, string>,
+  window: BrowserWindow
 ) {
   //Get public key of recipient of message
   const publicKey = Buffer.from(friends[name], "base64");
@@ -228,31 +229,17 @@ function connect(
     console.log("Connected!");
 
     //ASYNC or SYNC? IPCMain listener here that waits for updates from the renderer
-    ipcMain.on("client_submitted_message", async (event, message) => {
-      console.log("Listener fired");
+    ipcMain.on("client_submitting_message", async (event, message) => {
+      console.log("Listener for writing new data fired");
       console.log(message); //Message submitted by client
       const log = formatMessageToStringifiedLog(identity, message); //Check this
       const chatSessionPath = await buildChatDir(identity, name);
       writeToFS(chatSessionPath, log);
       peer.send(message); //Send the client submitted message to the peer
+
+      //SEND the message back to the renderer process?
+      event.reply("client_submitted_message", message);
     }); //TODO: check the async callback is allowed...
-
-    //A chat session begins
-    // while (true) {
-    //   const { message } = await inquirer.prompt([
-    //     { type: "input", name: "message", message: "me>" },
-    //   ]);
-    //   console.log("this is message");
-    //   console.log(message);
-    //   console.log("this is message.name");
-    //   console.log(message.name);
-
-    //   const log = formatMessageToStringifiedLog(identity, message); //Check this
-    //   const chatSessionPath = await buildChatDir(identity, name);
-    //   writeToFS(chatSessionPath, log);
-    //   peer.send(message);
-    //   //Send a peer a message, write this message to the local fs
-    // }
   });
 
   //Received new message from sending peer
@@ -262,6 +249,18 @@ function connect(
     const log = formatMessageToStringifiedLog(identity, data.toString("utf8")); //Check this
     const chatSessionPath = await buildChatDir(identity, name);
     writeToFS(chatSessionPath, log);
+
+    window.webContents.send("peer_submitted_message", log);
+    //Send directly to IPCrenderer
+
+    //T0D0:  Send this message to the IPCRenderer process to render
+    //This doesn't fire....
+    // ipcMain.on("client_submitted_message", (event, message) => {
+    //   console.log("Listener for reading new data fires");
+    //   console.log(message);
+    //   event.sender.send("client_submitted_message", event); // line A
+    //   //todo: verify this
+    // });
   });
   peer.on("close", () => {
     console.log("close");
@@ -291,7 +290,8 @@ async function initiateHandshake(
   initiator: boolean,
   recipient: string,
   friends: Record<string, string>,
-  friendsPath: string
+  friendsPath: string,
+  window: BrowserWindow
 ) {
   const password = randomBytes(32);
   const invite = Buffer.concat([password, me.publicKey]).toString("base64");
@@ -351,7 +351,7 @@ async function initiateHandshake(
   await fs.writeJSON(friendsPath, friends);
 
   //Now that encryption matches, attempt to connect
-  connect(me, name, recipient, initiator, friends);
+  connect(me, name, recipient, initiator, friends, window);
 }
 
 //  This function accepts a handshake to connect to a peer
@@ -362,7 +362,8 @@ async function acceptHandshake(
   invitedBy: string,
   inviteToken: string,
   friends: Record<string, string>,
-  friendsPath: string
+  friendsPath: string,
+  window: BrowserWindow
 ) {
   const token = Buffer.from(inviteToken.trim(), "base64");
   const password = token.slice(0, 32).toString("base64");
@@ -418,12 +419,12 @@ async function acceptHandshake(
   await fs.writeJSON(friendsPath, friends);
 
   //Now that encryption matches, attempt to connect
-  connect(me, name, invitedBy, initiator, friends);
+  connect(me, name, invitedBy, initiator, friends, window);
 }
 
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
-const createWindow = (): void => {
+const createWindow = (): BrowserWindow => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1100,
@@ -441,10 +442,15 @@ const createWindow = (): void => {
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
+
+  return mainWindow;
 };
 
 //  This begins the webRTC connection process
-async function establishConnection(peerMetadata: string) {
+async function establishConnection(
+  window: BrowserWindow,
+  peerMetadata: string
+) {
   //  Unpack JSON string to an object
   const peerMetadataObj = JSON.parse(peerMetadata);
   const initiator = peerMetadataObj.initiator;
@@ -469,7 +475,15 @@ async function establishConnection(peerMetadata: string) {
   if (initiator) {
     //Send generated token to client to render
     const recipient = peerMetadataObj.data.recipient;
-    initiateHandshake(mykeys, name, initiator, recipient, friends, friendsPath);
+    initiateHandshake(
+      mykeys,
+      name,
+      initiator,
+      recipient,
+      friends,
+      friendsPath,
+      window
+    );
   } else {
     const invitedBy = peerMetadataObj.data.invitedBy;
     const inviteToken = peerMetadataObj.data.inviteToken;
@@ -481,12 +495,13 @@ async function establishConnection(peerMetadata: string) {
       invitedBy,
       inviteToken,
       friends,
-      friendsPath
+      friendsPath,
+      window
     );
   }
 }
 
-async function registerListeners() {
+async function registerListeners(window: BrowserWindow) {
   /**
    * This comes from bridge integration, check bridge.ts
    */
@@ -499,7 +514,7 @@ async function registerListeners() {
 
   ipcMain.on("peer_metadata", (_, message) => {
     console.log(message);
-    establishConnection(message);
+    establishConnection(window, message);
   });
 }
 
@@ -507,9 +522,14 @@ async function registerListeners() {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app
-  .on("ready", createWindow)
+  .on("ready", () => {
+    const window = createWindow();
+    registerListeners(window);
+  })
+
+  // createWindow)
   .whenReady()
-  .then(registerListeners)
+  // .then(registerListeners)
   .catch((e) => console.error(e));
 
 // Quit when all windows are closed, except on macOS. There, it's common

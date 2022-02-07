@@ -1,6 +1,6 @@
 
 import { Container, Image, Text } from './styles'
-import Chat from '../ChatInput/input'
+import Chat from '../Chat/chat'
 import Connect from '../Connect/connect'
 import React from 'react'
 

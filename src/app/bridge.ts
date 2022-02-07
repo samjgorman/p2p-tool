@@ -16,7 +16,7 @@ export const api = {
 
   submitMessageToPeer: (message: string) => {
     // console.log("I'll write to the fs one day!" + string_to_write)
-    ipcRenderer.send("client_submitted_message", message);
+    ipcRenderer.send("client_submitting_message", message);
   },
 
   passPeerMetadata: (peer_metadata: string) => {

@@ -46,8 +46,8 @@
         [
           "@electron-forge/plugin-webpack",
           {
-            "port": "3000",
-            "loggerPort": "9000",
+            "port": "3001",
+            "loggerPort": "9001",
             "mainConfig": "./webpack.main.config.js",
             "renderer": {
               "config": "./webpack.renderer.config.js",
