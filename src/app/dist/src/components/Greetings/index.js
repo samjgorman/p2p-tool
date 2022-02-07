@@ -10,7 +10,7 @@ var connect_1 = __importDefault(require("../Connect/connect"));
 var react_1 = __importDefault(require("react"));
 function Greetings() {
     return (react_1["default"].createElement(styles_1.Container, null,
-        react_1["default"].createElement(styles_1.Text, null, "Demo of a p2p chat application"),
+        react_1["default"].createElement(styles_1.Text, null, "P2P Chat Demo"),
         react_1["default"].createElement(connect_1["default"], null),
         react_1["default"].createElement(input_1["default"], null)));
 }

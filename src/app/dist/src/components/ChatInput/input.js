@@ -54,7 +54,7 @@ function handleMessage(event) {
                 user: "Sam" //Temp value
             };
             payload = JSON.stringify(raw_payload);
-            window.Main.writeToFs(payload);
+            window.Main.submitMessageToPeer(payload);
             return [2 /*return*/];
         });
     });

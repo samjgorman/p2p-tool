@@ -14,9 +14,9 @@ exports.api = {
     sendInviteToken: function (val) {
         electron_1.ipcRenderer.send("generate_token");
     },
-    writeToFs: function (string_to_write) {
+    submitMessageToPeer: function (message) {
         // console.log("I'll write to the fs one day!" + string_to_write)
-        electron_1.ipcRenderer.send("string_to_write", string_to_write);
+        electron_1.ipcRenderer.send("client_submitted_message", message);
     },
     passPeerMetadata: function (peer_metadata) {
         electron_1.ipcRenderer.send("peer_metadata", peer_metadata);

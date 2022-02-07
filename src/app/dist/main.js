@@ -73,30 +73,6 @@ if (require("electron-squirrel-startup")) {
 function getPublicKeyId(publicKey) {
     return (0, crypto_1.createHash)(publicKey).toString("base64");
 }
-//  This util appends to a file
-function writeToFS(message) {
-    return __awaiter(this, void 0, void 0, function () {
-        var filename;
-        return __generator(this, function (_a) {
-            filename = "files/new.json";
-            if (message.length > 0) {
-                fs_extra_1["default"].appendFile(filename, message + "\n", function (err) {
-                    if (err) {
-                        console.log("Error appending to file" + err);
-                    }
-                    // } else {
-                    //   // Get the file contents after the append operation
-                    //   console.log(
-                    //     '\nFile Contents of file after append:',
-                    //     fs.readFileSync('test.txt', 'utf8')
-                    //   )
-                    // }
-                });
-            }
-            return [2 /*return*/];
-        });
-    });
-}
 function generateKeys(identity) {
     return __awaiter(this, void 0, void 0, function () {
         var identityPath, publicKeyPath, secretKeyPath, me;
@@ -138,45 +114,151 @@ function generateKeys(identity) {
         });
     });
 }
+//  This util appends to a file
+function writeToFS(fileNamePath, message) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            if (message.length > 0) {
+                fs_extra_1["default"].appendFile(fileNamePath, message + "\n", function (err) {
+                    if (err) {
+                        console.log("Error appending to file" + err);
+                    }
+                    // } else {
+                    //   // Get the file contents after the append operation
+                    //   console.log(
+                    //     '\nFile Contents of file after append:',
+                    //     fs.readFileSync('test.txt', 'utf8')
+                    //   )
+                    // }
+                });
+            }
+            return [2 /*return*/];
+        });
+    });
+}
+function buildChatDir(identity, name) {
+    return __awaiter(this, void 0, void 0, function () {
+        var dirName, chatPath, fileName, chatSessionPath;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    dirName = identity + "_" + name;
+                    chatPath = path.join(__dirname, "..", "chats", dirName);
+                    return [4 /*yield*/, fs_extra_1["default"].mkdirp(chatPath)];
+                case 1:
+                    _a.sent();
+                    fileName = identity + "_" + name + "_" + ".json";
+                    chatSessionPath = path.join(chatPath, fileName);
+                    return [4 /*yield*/, fs_extra_1["default"].pathExists(chatSessionPath)];
+                case 2:
+                    //If file has not already been created, create it
+                    if (!(_a.sent())) {
+                        //check if opposite path exists too
+                        console.log("Generating unique chat file.");
+                        fs_extra_1["default"].open(chatSessionPath, "wx", function (err, fd) {
+                            //Wx flag creates empty file async
+                            // handle error
+                            fs_extra_1["default"].close(fd, function (err) {
+                                // handle error and close fd
+                            });
+                        });
+                    }
+                    return [2 /*return*/, chatSessionPath];
+            }
+        });
+    });
+}
+function formatMessageToStringifiedLog(identity, message) {
+    var log = {
+        timestamp: Date.now(),
+        sender: identity,
+        message: message
+    };
+    var stringified_log = JSON.stringify(log);
+    return stringified_log;
+}
 var hub = (0, signalhub_1["default"])("p2p-tool", ["http://localhost:8080/"]);
-function connect(name, initiatorFlag) {
+/**
+ * Connect
+ * @param identity  -> String identity of the sender of the message
+ * @param name  -> String Name of the recipient of the message
+ * @param initiator -> Bool representing if initiator of the wrtc connection
+ */
+function connect(me, identity, name, initiator, friends) {
     var _this = this;
-    var peer = new simple_peer_1["default"]({ initiator: initiatorFlag, wrtc: wrtc_1["default"] });
+    //Get public key of recipient of message
+    var publicKey = Buffer.from(friends[name], "base64");
+    console.log("Public key of recipient");
+    console.log(friends[name]);
+    var peer = new simple_peer_1["default"]({ initiator: initiator, wrtc: wrtc_1["default"] });
     peer.on("signal", function (data) {
         var payload = {
             type: "signal",
             data: data
         };
-        var message = JSON.stringify(payload);
-        console.log(name + "signalling");
-        console.log(message);
-        hub.broadcast("test", message);
+        var message = {
+            type: "box",
+            from: getPublicKeyId(me.publicKey),
+            payload: (0, crypto_1.box)({
+                message: Buffer.from(JSON.stringify(payload), "utf8"),
+                from: me,
+                to: { publicKey: publicKey }
+            }).toString("base64")
+        };
+        hub.broadcast(getPublicKeyId(publicKey), message);
     });
-    if (!initiatorFlag) {
-        var stream_1 = hub.subscribe("test");
-        console.log(name + "subscribed to updates");
-        stream_1.on("data", function (message) {
-            var result = JSON.parse(message).toString("utf8");
-            if (result.type !== "signal") {
-                console.log("wrong payload type");
-                return;
-            }
-            console.log(name + "received data and signalling result data");
-            console.log(result.data);
-            peer.signal(result.data);
-            stream_1.destroy();
-        });
-    }
+    var stream = hub.subscribe(getPublicKeyId(me.publicKey));
+    stream.on("data", function (message) {
+        if (message.type !== "box") {
+            console.error("Wrong message type");
+            return;
+        }
+        if (message.from !== getPublicKeyId(publicKey)) {
+            console.log("Wrong person");
+            return;
+        }
+        var result = JSON.parse((0, crypto_1.boxOpen)({
+            payload: Buffer.from(message.payload, "base64"),
+            from: { publicKey: publicKey },
+            to: me
+        }).toString("utf8"));
+        if (result.type !== "signal") {
+            console.log("wrong payload type");
+            return;
+        }
+        peer.signal(result.data);
+        stream.destroy();
+    });
     peer.on("connect", function () { return __awaiter(_this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             console.log("Connected!");
+            //ASYNC or SYNC? IPCMain listener here that waits for updates from the renderer
+            electron_1.ipcMain.on("client_submitted_message", function (event, message) {
+                console.log(message); //Message submitted by client
+                // const log = formatMessageToStringifiedLog(identity, message); //Check this
+                // const chatSessionPath = await buildChatDir(identity, name);
+                // writeToFS(chatSessionPath, log);
+                // peer.send(message); //Send the client submitted message to the peer
+            });
             return [2 /*return*/];
         });
     }); });
     //Received new message from sending peer
-    peer.on("data", function (data) {
-        console.log(name + ">", data.toString("utf8"));
-    });
+    peer.on("data", function (data) { return __awaiter(_this, void 0, void 0, function () {
+        var log, chatSessionPath;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    console.log(name + ">", data.toString("utf8"));
+                    log = formatMessageToStringifiedLog(identity, data.toString("utf8"));
+                    return [4 /*yield*/, buildChatDir(identity, name)];
+                case 1:
+                    chatSessionPath = _a.sent();
+                    writeToFS(chatSessionPath, log);
+                    return [2 /*return*/];
+            }
+        });
+    }); });
     peer.on("close", function () {
         console.log("close");
     });
@@ -197,7 +279,7 @@ function connect(name, initiatorFlag) {
 // }
 //  This function initiates a handshake to connect to a peer
 function initiateHandshake(me, //TODO: better way to pass around keys
-name, initiator, recipient) {
+name, initiator, recipient, friends, friendsPath) {
     return __awaiter(this, void 0, void 0, function () {
         var password, invite, publicKey, message, payload, channelMessage;
         return __generator(this, function (_a) {
@@ -205,9 +287,12 @@ name, initiator, recipient) {
                 case 0:
                     password = (0, crypto_1.randomBytes)(32);
                     invite = Buffer.concat([password, me.publicKey]).toString("base64");
-                    electron_1.ipcMain.on("generate_token", function (event, message) {
-                        event.sender.send("generate_token", invite);
-                    });
+                    // ipcMain.on("generate_token", (event, message) => {
+                    //   event.sender.send("generate_token", invite);
+                    // });
+                    // Create an invite payload
+                    console.log("Send this payload to ".concat(recipient, ":"));
+                    console.log(invite);
                     return [4 /*yield*/, new Promise(function (resolve) {
                             var stream = hub.subscribe(getPublicKeyId(me.publicKey));
                             stream.on("data", function (message) {
@@ -219,6 +304,7 @@ name, initiator, recipient) {
                                     var result = JSON.parse(data.toString("utf8"));
                                     if (result.type === "invite") {
                                         if (result.password === password.toString("base64")) {
+                                            console.log("Passwords match");
                                             stream.destroy();
                                             resolve(Buffer.from(result.publicKey, "base64"));
                                         }
@@ -251,13 +337,19 @@ name, initiator, recipient) {
                         payload: payload.toString("base64")
                     };
                     hub.broadcast(getPublicKeyId(publicKey), channelMessage);
+                    friends[recipient] = publicKey.toString("base64"); //this should be recipient?
+                    return [4 /*yield*/, fs_extra_1["default"].writeJSON(friendsPath, friends)];
+                case 2:
+                    _a.sent();
+                    //Now that encryption matches, attempt to connect
+                    connect(me, name, recipient, initiator, friends);
                     return [2 /*return*/];
             }
         });
     });
 }
 //  This function accepts a handshake to connect to a peer
-function acceptHandshake(me, name, initiator, invitedBy, inviteToken) {
+function acceptHandshake(me, name, initiator, invitedBy, inviteToken, friends, friendsPath) {
     return __awaiter(this, void 0, void 0, function () {
         var token, password, publicKey, message, payload, channelMessage;
         return __generator(this, function (_a) {
@@ -293,6 +385,7 @@ function acceptHandshake(me, name, initiator, invitedBy, inviteToken) {
                                         });
                                         var result = JSON.parse(data.toString("utf8"));
                                         if (result.type === "invite-ack") {
+                                            console.log("Void promise resolved");
                                             stream.destroy();
                                             resolve();
                                         }
@@ -311,6 +404,12 @@ function acceptHandshake(me, name, initiator, invitedBy, inviteToken) {
                         })];
                 case 1:
                     _a.sent();
+                    friends[invitedBy] = publicKey.toString("base64");
+                    return [4 /*yield*/, fs_extra_1["default"].writeJSON(friendsPath, friends)];
+                case 2:
+                    _a.sent();
+                    //Now that encryption matches, attempt to connect
+                    connect(me, name, invitedBy, initiator, friends);
                     return [2 /*return*/];
             }
         });
@@ -336,7 +435,7 @@ var createWindow = function () {
 //  This begins the webRTC connection process
 function establishConnection(peerMetadata) {
     return __awaiter(this, void 0, void 0, function () {
-        var peerMetadataObj, initiator, name, mykeys, recipient, invitedBy, inviteToken;
+        var peerMetadataObj, initiator, name, mykeys, identityPath, friendsPath, friends, recipient, invitedBy, inviteToken;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -346,20 +445,26 @@ function establishConnection(peerMetadata) {
                     return [4 /*yield*/, generateKeys(name)];
                 case 1:
                     mykeys = _a.sent();
-                    // ipcMain.on("generate_token", (event, message) => {
-                    //   const invite = generateInviteToken(mykeys);
-                    //   event.sender.send("generate_token", invite);
-                    // });
+                    identityPath = path.join(__dirname, "..", "identities", name);
+                    friendsPath = path.join(identityPath, "friends.json");
+                    friends = {};
+                    return [4 /*yield*/, fs_extra_1["default"].pathExists(friendsPath)];
+                case 2:
+                    if (!_a.sent()) return [3 /*break*/, 4];
+                    return [4 /*yield*/, fs_extra_1["default"].readJSON(friendsPath)];
+                case 3:
+                    friends = _a.sent();
+                    _a.label = 4;
+                case 4:
                     if (initiator) {
                         recipient = peerMetadataObj.data.recipient;
-                        initiateHandshake(mykeys, name, initiator, recipient);
+                        initiateHandshake(mykeys, name, initiator, recipient, friends, friendsPath);
                     }
                     else {
                         invitedBy = peerMetadataObj.data.invitedBy;
                         inviteToken = peerMetadataObj.data.inviteToken;
-                        acceptHandshake(mykeys, name, initiator, invitedBy, inviteToken);
+                        acceptHandshake(mykeys, name, initiator, invitedBy, inviteToken, friends, friendsPath);
                     }
-                    connect(name, initiator);
                     return [2 /*return*/];
             }
         });
@@ -372,10 +477,10 @@ function registerListeners() {
              * This comes from bridge integration, check bridge.ts
              */
             //  writeToFS
-            electron_1.ipcMain.on("string_to_write", function (_, message) {
-                writeToFS(message);
-                console.log(message);
-            });
+            // ipcMain.on("string_to_write", (_, message) => {
+            //   writeToFS(message);
+            //   console.log(message);
+            // });
             electron_1.ipcMain.on("peer_metadata", function (_, message) {
                 console.log(message);
                 establishConnection(message);

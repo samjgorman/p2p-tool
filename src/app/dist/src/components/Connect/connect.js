@@ -113,10 +113,11 @@ function Connect() {
         //Find way to listen for API
         window.Main.on("generate_token", function (event, val) {
             setToken(val);
+            console.log(val);
+            //Finish this
         });
     }, []);
     return (react_1["default"].createElement("div", { className: "LiveChatMessageForm" },
-        react_1["default"].createElement("div", null, "Begin a p2p connection"),
         react_1["default"].createElement("form", { className: "liveChat-message-form", autoComplete: "off", onSubmit: function (event) {
                 return handleConnectInfo(event);
             } },
