@@ -59,7 +59,13 @@ type Keys = {
 
 async function generateKeys(identity: string): Promise<Keys> {
   //TODO: don't write this to the hidden webpack dir
-  const identityPath = path.join(__dirname, "..", "identities", identity);
+  // const identityPath = path.join(__dirname, "..", "identities", identity);
+  const identityPath = path.join(
+    __dirname,
+    "../../files",
+    "identities",
+    identity
+  );
 
   console.log(identityPath);
   await fs.mkdirp(identityPath);
@@ -103,11 +109,10 @@ async function writeToFS(fileNamePath: string, message: string) {
 
 async function buildChatDir(identity: string, name: string): Promise<string> {
   const dirName = identity + "_" + name;
-  const chatPath = path.join(__dirname, "..", "chats", dirName);
-  await fs.mkdirp(chatPath);
+  // const chatPath = path.join(__dirname, "..", "chats", dirName);
+  const chatPath = path.join(__dirname, "../../files", "chats", dirName);
 
-  // const fileName =
-  // 	identity + "_" + name + "_" + Date.now().toString() + ".json"
+  await fs.mkdirp(chatPath);
   const fileName = identity + "_" + name + "_" + ".json";
 
   const chatSessionPath = path.join(chatPath, fileName);
@@ -142,6 +147,7 @@ function formatMessageToStringifiedLog(
 }
 
 const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
+
 /**
  * Connect
  * @param identity  -> String identity of the sender of the message
@@ -168,8 +174,8 @@ function connect(
       iceServers: [
         {
           urls: "stun:numb.viagenie.ca?transport=tcp", //avoid UDP rules & work around network blocks
-          username: "samjgorman@gmail.com",
-          credential: "FrogFrog141",
+          username: process.env.STUN_TURN_USER,
+          credential: process.env.STUN_TURN_PASS,
         },
         {
           urls: "turn:numb.viagenie.ca?transport=tcp",
@@ -229,6 +235,7 @@ function connect(
     console.log("Connected!");
 
     //ASYNC or SYNC? IPCMain listener here that waits for updates from the renderer
+    //TODO: Clean up this listener...
     ipcMain.on("client_submitting_message", async (event, message) => {
       console.log("Listener for writing new data fired");
       console.log(message); //Message submitted by client
@@ -248,7 +255,7 @@ function connect(
     console.log(name + ">", data.toString("utf8"));
     //Received message from peer, write this to the local fs
     // const log = formatMessageToStringifiedLog(identity, data.toString("utf8")); //Check this
-    const chatSessionPath = await buildChatDir(identity, name);
+    const chatSessionPath = await buildChatDir(name, identity); //was reversed
     writeToFS(chatSessionPath, receivedLog);
 
     window.webContents.send("peer_submitted_message", receivedLog);
@@ -466,7 +473,9 @@ async function establishConnection(
   // });
 
   //TODO: refactor
-  const identityPath = path.join(__dirname, "..", "identities", name);
+  const identityPath = path.join(__dirname, "../../files", "identities", name);
+  // const identityPath = path.join(__dirname, "..", "identities", name);
+
   const friendsPath = path.join(identityPath, "friends.json");
   let friends: Record<string, string> = {};
   if (await fs.pathExists(friendsPath)) {
@@ -538,6 +547,7 @@ app
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
+    ipcMain.removeAllListeners(); //TODO: verify this works
     app.quit();
   }
 });
@@ -548,6 +558,10 @@ app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+
+app.on("before-quit", () => {
+  ipcMain.removeAllListeners(); //TODO: verify this works
 });
 
 // In this file you can include the rest of your app's specific main process
