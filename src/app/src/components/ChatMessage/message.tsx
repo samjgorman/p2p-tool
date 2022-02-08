@@ -1,20 +1,6 @@
 
 import React from "react";
 
-
-/**
- * Converts a UNIX timestamp seconds into a "... time ago" format.
- *
- * @param seconds - UNIX timestamp seconds as s
- */
- function timeSince(seconds):string {
-  const date = new Date(seconds)
-
-  return date.toLocaleTimeString('en-US')
-}
-
-
-
 /**
  * This component renders a single message and should be used as a
  * child component to LiveChat.
@@ -37,9 +23,8 @@ import React from "react";
                 {props.chatMessage}
               </p>
               <p className="message-time">
-                {/* {props.timestamp} */}
-
-                {timeSince(props.timestamp)}
+                {props.timestamp}
+                {/* {timeSince(props.liveChatMessage.time_sent.seconds)} */}
               </p>
             </div>
 

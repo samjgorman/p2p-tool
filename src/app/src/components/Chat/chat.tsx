@@ -16,6 +16,9 @@ import ChatMessage from "../ChatMessage/message";
 
     const [stackPopulated, setStackPopulated] = useState(false);
     const [messagesToRenderStack, setMessagesToRenderStack] = useState([]);
+
+
+
   
     useEffect(() => {
     //   let div = document.getElementsByClassName("LiveChat")[0];
