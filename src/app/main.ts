@@ -59,7 +59,12 @@ type Keys = {
 
 async function generateKeys(identity: string): Promise<Keys> {
   //TODO: don't write this to the hidden webpack dir
-  const identityPath = path.join(__dirname, "..", "identities", identity);
+  const identityPath = path.join(
+    __dirname,
+    "../../files",
+    "identities",
+    identity
+  );
 
   console.log(identityPath);
   await fs.mkdirp(identityPath);
@@ -103,7 +108,7 @@ async function writeToFS(fileNamePath: string, message: string) {
 
 async function buildChatDir(identity: string, name: string): Promise<string> {
   const dirName = identity + "_" + name;
-  const chatPath = path.join(__dirname, "..", "chats", dirName);
+  const chatPath = path.join(__dirname, "../..files", "chats", dirName);
   await fs.mkdirp(chatPath);
 
   // const fileName =
@@ -168,8 +173,8 @@ function connect(
       iceServers: [
         {
           urls: "stun:numb.viagenie.ca?transport=tcp", //avoid UDP rules & work around network blocks
-          username: "samjgorman@gmail.com",
-          credential: "FrogFrog141",
+          username: process.env.STUN_TURN_USER,
+          credential: process.env.STUN_TURN_PASS,
         },
         {
           urls: "turn:numb.viagenie.ca?transport=tcp",
@@ -466,7 +471,7 @@ async function establishConnection(
   // });
 
   //TODO: refactor
-  const identityPath = path.join(__dirname, "..", "identities", name);
+  const identityPath = path.join(__dirname, "../../files", "identities", name);
   const friendsPath = path.join(identityPath, "friends.json");
   let friends: Record<string, string> = {};
   if (await fs.pathExists(friendsPath)) {
