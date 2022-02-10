@@ -62,6 +62,7 @@ type Keys = {
 
 async function generateKeys(identity: string): Promise<Keys> {
   //TODO: don't write this to the hidden webpack dir
+  //TODO: also write these keys to a folder
   const identityPath = path.join(
     __dirname,
     "../../files",
@@ -69,11 +70,29 @@ async function generateKeys(identity: string): Promise<Keys> {
     identity
   );
 
+  const persistantIdentityPath = path.join(
+    __dirname,
+    "../../files",
+    "me",
+    identity
+  );
+
   console.log(identityPath);
   await fs.mkdirp(identityPath);
 
+  await fs.mkdirp(persistantIdentityPath);
+
   const publicKeyPath = path.join(identityPath, "public.key");
   const secretKeyPath = path.join(identityPath, "secret.key");
+
+  const persistantPublicKeyPath = path.join(
+    persistantIdentityPath,
+    "public.key"
+  );
+  const persistantSecretKeyPath = path.join(
+    persistantIdentityPath,
+    "secret.key"
+  );
 
   let me: { publicKey: Buffer; secretKey: Buffer };
   if (!(await fs.pathExists(publicKeyPath))) {
@@ -85,6 +104,18 @@ async function generateKeys(identity: string): Promise<Keys> {
     me = {
       publicKey: await fs.readFile(publicKeyPath),
       secretKey: await fs.readFile(secretKeyPath),
+    };
+  }
+
+  if (!(await fs.pathExists(persistantPublicKeyPath))) {
+    console.log("Generating individual keys.");
+    me = createKeys();
+    await fs.writeFile(persistantPublicKeyPath, me.publicKey);
+    await fs.writeFile(persistantSecretKeyPath, me.secretKey);
+  } else {
+    me = {
+      publicKey: await fs.readFile(persistantPublicKeyPath),
+      secretKey: await fs.readFile(persistantSecretKeyPath),
     };
   }
 
@@ -468,7 +499,9 @@ async function pollIfFriendsOnline(
   window: BrowserWindow
 ) {
   //From a user's name, search for their JSON file and read it...
-  const identityPath = path.join(__dirname, "../../files", "identities", name);
+  // const identityPath = path.join(__dirname, "../../files", "identities", name);
+  const identityPath = path.join(__dirname, "../../files", "me", name);
+
   const friendsPath = path.join(identityPath, "friends.json");
   let friends: Record<string, string> = {};
 
@@ -523,7 +556,7 @@ async function pollIfFriendsOnline(
             "Ack received from remote peer," + friendName + " is online "
           );
           ackReceived = true;
-          // stream.destroy();
+          stream.destroy();
         } else {
           console.error("Syn ack received is not from the intended peer");
         }
@@ -572,12 +605,14 @@ async function listenForConnectionRequests(
           matchFound = true;
           //Sent an ACK to the sender's public key
           hub.broadcast(message.from + "ack", channelMessage);
-          stream.destroy();
+          // stream.destroy();
         }
       }
 
       if (!matchFound) {
-        console.error("message from a person not in the user's friend.json"); //No match was found from the user's friends json, so rejecting unknown
+        console.error(
+          "message from a person not in the user's friend.json " + message.from
+        ); //No match was found from the user's friends json, so rejecting unknown
       }
     } else {
       console.error("wrong public channel message type" + message.type);
@@ -597,6 +632,7 @@ async function establishConnection(
   const initiator = peerMetadataObj.initiator;
   const name = peerMetadataObj.data.name;
 
+  //Check if a file with this name exists in identity
   //Generate keys
   const mykeys = await generateKeys(name);
 
@@ -606,7 +642,9 @@ async function establishConnection(
   // });
 
   //TODO: refactor
-  const identityPath = path.join(__dirname, "../../files", "identities", name);
+  // const identityPath = path.join(__dirname, "../../files", "identities", name);
+  const identityPath = path.join(__dirname, "../../files", "me", name);
+
   const friendsPath = path.join(identityPath, "friends.json");
   let friends: Record<string, string> = {};
   if (await fs.pathExists(friendsPath)) {
@@ -619,10 +657,13 @@ async function establishConnection(
   //Listen for incoming requests to test availability
   listenForConnectionRequests(mykeys, name, initiator, friends, window);
 
-  pollIfFriendsOnline(mykeys, name, initiator, window);
+  //Run this code every 15 seconds
+  const timerId = setInterval(function () {
+    pollIfFriendsOnline(mykeys, name, initiator, window);
+  }, 1000 * 15);
   //Package and send a list of the user's friends
   //May need to await connection
-  window.webContents.send("get_all_friends_of_user", friends);
+  // window.webContents.send("get_all_friends_of_user", friends);
 
   if (initiator) {
     //Send generated token to client to render
