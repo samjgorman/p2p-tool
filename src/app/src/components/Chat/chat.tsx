@@ -53,12 +53,7 @@ import ChatMessage from "../ChatMessage/message";
 
     });
 
-    console.log(messagesToRenderStack.length)
-    console.log("one object");
-
-    console.log(messagesToRenderStack[0]);
     //TODO: Add a type here...
-  
     return (
       <div className="LiveChat">
           {stackPopulated &&

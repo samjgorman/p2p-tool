@@ -1,6 +1,12 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 
+function FriendObject(props){
+
+    return (
+        <div className="FriendObject">{props.friend}</div>
+    );
+}
 
 /**
  * This component renders a list of a user's friends,
@@ -14,23 +20,44 @@ import React from "react";
  */
 
  function FriendsList(props) { //refactor for TS 
+    const [friends, setFriends] = useState([]);
+    const [friendsPopulated, setFriendsPopulated] = useState(false);
+
 
     //TODO: function that reads from the files/friends directory
     //And presents a list of friends 
-    
+    useEffect( () =>{
+        console.log("rendered ran")
+        //Listen to the route to get all friends for the given user
+        window.Main.on("get_all_friends_of_user", (event,arg) =>{
+            console.log("Friends object received")
+            console.log(event) 
+            const friendsObjToRender = JSON.parse(event)
+            const newState = [...friends, friendsObjToRender];
+            setFriends(newState)
+            setFriendsPopulated(true)
+        })
+
+        return function cleanup() {
+            window.Main.removeAllListeners("get_all_friends_of_user")
+           };
+        
+    })
+
+    console.log("LEN OF FRIEND ARR" + friends.length)
+    console.log(friends[0])
+
     return (
       <div className="FriendsListContainer">
-          
-            <h4 className="message-owner">{props.sender}</h4>
-            <div className="UserAndText">
-              <p className="message-text">
-                {props.chatMessage}
-              </p>
-              <p className="message-time">
-                {props.timestamp}
-                {/* {timeSince(props.liveChatMessage.time_sent.seconds)} */}
-              </p>
-            </div>
+
+           {friendsPopulated && friends.map((friend, i) => (
+              <FriendObject
+                key={i}
+                friend = {friend}
+              />
+            ))
+           }
+        
 
       </div>
     );

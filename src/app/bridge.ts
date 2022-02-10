@@ -23,6 +23,10 @@ export const api = {
     ipcRenderer.send("peer_metadata", peer_metadata);
   },
 
+  // getAllFriendsOfUser: (placeholder: string) => {
+  //   ipcRenderer.send("get_all_friends_of_user", placeholder);
+  // },
+
   /**
    * Provide an easier way to listen to events
    */
