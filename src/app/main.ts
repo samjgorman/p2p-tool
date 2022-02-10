@@ -70,29 +70,29 @@ async function generateKeys(identity: string): Promise<Keys> {
     identity
   );
 
-  const persistantIdentityPath = path.join(
-    __dirname,
-    "../../files",
-    "me",
-    identity
-  );
+  // const persistantIdentityPath = path.join(
+  //   __dirname,
+  //   "../../files",
+  //   "me",
+  //   identity
+  // );
 
   console.log(identityPath);
   await fs.mkdirp(identityPath);
 
-  await fs.mkdirp(persistantIdentityPath);
+  // await fs.mkdirp(persistantIdentityPath);
 
   const publicKeyPath = path.join(identityPath, "public.key");
   const secretKeyPath = path.join(identityPath, "secret.key");
 
-  const persistantPublicKeyPath = path.join(
-    persistantIdentityPath,
-    "public.key"
-  );
-  const persistantSecretKeyPath = path.join(
-    persistantIdentityPath,
-    "secret.key"
-  );
+  // const persistantPublicKeyPath = path.join(
+  //   persistantIdentityPath,
+  //   "public.key"
+  // );
+  // const persistantSecretKeyPath = path.join(
+  //   persistantIdentityPath,
+  //   "secret.key"
+  // );
 
   let me: { publicKey: Buffer; secretKey: Buffer };
   if (!(await fs.pathExists(publicKeyPath))) {
@@ -107,17 +107,17 @@ async function generateKeys(identity: string): Promise<Keys> {
     };
   }
 
-  if (!(await fs.pathExists(persistantPublicKeyPath))) {
-    console.log("Generating individual keys.");
-    me = createKeys();
-    await fs.writeFile(persistantPublicKeyPath, me.publicKey);
-    await fs.writeFile(persistantSecretKeyPath, me.secretKey);
-  } else {
-    me = {
-      publicKey: await fs.readFile(persistantPublicKeyPath),
-      secretKey: await fs.readFile(persistantSecretKeyPath),
-    };
-  }
+  // if (!(await fs.pathExists(persistantPublicKeyPath))) {
+  //   console.log("Generating individual keys.");
+  //   me = createKeys();
+  //   await fs.writeFile(persistantPublicKeyPath, me.publicKey);
+  //   await fs.writeFile(persistantSecretKeyPath, me.secretKey);
+  // } else {
+  //   me = {
+  //     publicKey: await fs.readFile(persistantPublicKeyPath),
+  //     secretKey: await fs.readFile(persistantSecretKeyPath),
+  //   };
+  // }
 
   return me;
 }
@@ -142,7 +142,7 @@ async function writeToFS(fileNamePath: string, message: string) {
 
 async function buildChatDir(identity: string, name: string): Promise<string> {
   const dirName = identity + "_" + name;
-  const chatPath = path.join(__dirname, "../..files", "chats", dirName);
+  const chatPath = path.join(__dirname, "../../files", "chats", dirName);
   await fs.mkdirp(chatPath);
 
   // const fileName =
@@ -154,12 +154,15 @@ async function buildChatDir(identity: string, name: string): Promise<string> {
   //If file has not already been created, create it
   if (!(await fs.pathExists(chatSessionPath))) {
     //check if opposite path exists too
-    console.log("Generating unique chat file.");
+    console.log("Generating unique chat file." + chatSessionPath);
     fs.open(chatSessionPath, "wx", function (err, fd) {
       //Wx flag creates empty file async
       // handle error
+      console.error(err);
+
       fs.close(fd, function (err) {
         // handle error and close fd
+        console.error(err);
       });
     });
   }
@@ -642,9 +645,8 @@ async function establishConnection(
   // });
 
   //TODO: refactor
-  // const identityPath = path.join(__dirname, "../../files", "identities", name);
-  const identityPath = path.join(__dirname, "../../files", "me", name);
-
+  const identityPath = path.join(__dirname, "../../files", "identities", name);
+  // const identityPath = path.join(__dirname, "../../files", "me", name);
   const friendsPath = path.join(identityPath, "friends.json");
   let friends: Record<string, string> = {};
   if (await fs.pathExists(friendsPath)) {
