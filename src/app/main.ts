@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
 import signalhub from "signalhub";
 import Peer from "simple-peer";
 import wrtc from "wrtc";
@@ -145,9 +145,7 @@ async function buildChatDir(identity: string, name: string): Promise<string> {
   const chatPath = path.join(__dirname, "../../files", "chats", dirName);
   await fs.mkdirp(chatPath);
 
-  // const fileName =
-  // 	identity + "_" + name + "_" + Date.now().toString() + ".json"
-  const fileName = identity + "_" + name + "_" + ".json";
+  const fileName = identity + "_" + name + ".json";
 
   const chatSessionPath = path.join(chatPath, fileName);
 
@@ -248,7 +246,7 @@ function connect(
       return;
     }
     if (message.from !== getPublicKeyId(publicKey)) {
-      console.log("Wrong person");
+      console.error("Wrong person");
       return;
     }
     const result: PublicChannelMessagePayload = JSON.parse(
@@ -715,20 +713,31 @@ async function registerListeners(window: BrowserWindow) {
   });
 }
 
+async function registerProtocols() {
+  app.setAsDefaultProtocolClient("atom");
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app
   .on("ready", () => {
     const window = createWindow();
+    registerProtocols();
     registerListeners(window);
+    //Register protocol routes
   })
 
-  // createWindow)
   .whenReady()
   // .then(registerListeners)
-  .catch((e) => console.error(e));
+  .catch((e) => console.error(e)); //TODO: check this code
 
+// Handle the protocol. In this case, we choose to show an Error Box.
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+
+  dialog.showErrorBox("Welcome Back", `You arrived from: ${url}`);
+});
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.

@@ -20,6 +20,10 @@
   "config": {
     "forge": {
       "packagerConfig": {},
+      "protocols": {
+        "name": "atom",
+        "schemes": ["atom"]
+      },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",
