@@ -44,8 +44,6 @@ async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
  *  * @param props is an object that contains these properties
  * 
 **/
-
-
 function Connect() {
 
   const [initiator, setInitiator] = useState(false);

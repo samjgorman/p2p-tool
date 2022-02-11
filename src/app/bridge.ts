@@ -10,8 +10,12 @@ export const api = {
    * The function below can accessed using `window.Main.writeToFS`
    */
 
+  ifConnectionConfirmed: (message: boolean) => {
+    ipcRenderer.send("if_connection_confirmed", message);
+  },
+
   sendInviteToken: (message: string) => {
-    ipcRenderer.send("generate_invite_link"), message;
+    ipcRenderer.send("generate_invite_link", message);
   },
 
   submitMessageToPeer: (message: string) => {

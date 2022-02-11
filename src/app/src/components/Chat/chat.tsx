@@ -12,14 +12,9 @@ import ChatMessage from "../ChatMessage/message";
  */
  function Chat(props) {
    
-    //Read from merged file (for now, new.txt)
-
     const [stackPopulated, setStackPopulated] = useState(false);
     const [messagesToRenderStack, setMessagesToRenderStack] = useState([]);
     useEffect(() => {
-    //   let div = document.getElementsByClassName("LiveChat")[0];
-    //   div.scrollTop = div.scrollHeight;
-
       //Listen for submitted messages
       window.Main.on("client_submitted_message", (event,arg) =>{
           console.log("Chat object received")

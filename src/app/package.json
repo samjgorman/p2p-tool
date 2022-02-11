@@ -21,8 +21,8 @@
     "forge": {
       "packagerConfig": {},
       "protocols": {
-        "name": "atom",
-        "schemes": ["atom"]
+        "name": "p2p",
+        "schemes": ["p2p"]
       },
       "makers": [
         {
