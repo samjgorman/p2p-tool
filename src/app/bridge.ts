@@ -10,8 +10,8 @@ export const api = {
    * The function below can accessed using `window.Main.writeToFS`
    */
 
-  sendInviteToken: (val: string) => {
-    ipcRenderer.send("generate_token");
+  sendInviteToken: (message: string) => {
+    ipcRenderer.send("generate_invite_link"), message;
   },
 
   submitMessageToPeer: (message: string) => {

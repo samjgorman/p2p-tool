@@ -3,6 +3,8 @@ import React, {useState, useEffect} from "react";
 
 
 async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
+    event.preventDefault(); //test
+
     console.log(event.target[0].value)
     console.log(event.target[1].value)
     //  Send this information to the main thread to begin a webrtc connection
@@ -47,13 +49,13 @@ async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
 function Connect() {
 
   const [initiator, setInitiator] = useState(false);
-  const [token, setToken] = useState(0);
+  const [token, setToken] = useState("");
 
 
   function handleChoice(val:string){
     if(val === "send"){
       setInitiator(true);
-      window.Main.sendInviteToken("Requested token");
+      // window.Main.sendInviteToken("Requested token");
   
     }
     if(val === "accept"){
@@ -64,13 +66,14 @@ function Connect() {
   useEffect(() => {
     // Listen for the event
     //Find way to listen for API
-    window.Main.on("generate_token", (event, val) => {
-      setToken(val);
-      console.log(val)
+    window.Main.on("generate_invite_link", (event, message) => {
+      console.log("Received invite link")
+      setToken(event);
+      console.log(event)
       //Finish this
     });
    
-  }, []);
+  }); 
 
     return (
         <div className="LiveChatMessageForm">
@@ -106,7 +109,7 @@ function Connect() {
             <input className="submit-connection-button" type="submit" value="Send" />
           </form>
 
-            {initiator && 
+            {
           <div>Send this payload: {token} </div>
             }
 

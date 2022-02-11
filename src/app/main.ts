@@ -310,15 +310,28 @@ function connect(
   });
 }
 
-// function generateInviteToken(me: Keys): string {
-//   // Create an invite payload
-//   const password = randomBytes(32);
-//   const invite = Buffer.concat([password, me.publicKey]).toString("base64");
+function generateInviteLink(
+  password: Buffer,
+  name: string,
+  me: Keys,
+  window: BrowserWindow
+): string {
+  // Create an invite payload
+  const invite = Buffer.concat([password, me.publicKey]).toString("base64");
+  // Create an invite payload
+  //Format as a magic link
+  const baseUrl = "p2p://";
+  const nameParam = "name=" + name;
+  const inviteParam = "invite=" + invite;
 
-//   console.log(`Send this payload:`);
-//   console.log(invite);
-//   return invite;
-// }
+  const inviteLink = baseUrl + nameParam + "&" + inviteParam;
+  console.log(`Send this magic link`);
+  console.log(inviteLink);
+
+  window.webContents.send("generate_invite_link", inviteLink);
+
+  return inviteLink;
+}
 
 //  This function initiates a handshake to connect to a peer
 async function initiateHandshake(
@@ -331,13 +344,8 @@ async function initiateHandshake(
   window: BrowserWindow
 ) {
   const password = randomBytes(32);
-  const invite = Buffer.concat([password, me.publicKey]).toString("base64");
-  // ipcMain.on("generate_token", (event, message) => {
-  //   event.sender.send("generate_token", invite);
-  // });
-  // Create an invite payload
-  console.log(`Send this payload to ${recipient}:`);
-  console.log(invite);
+  // const invite = Buffer.concat([password, me.publicKey]).toString("base64");
+  const inviteLink = generateInviteLink(password, name, me, window);
 
   const publicKey = await new Promise<Buffer>((resolve) => {
     const stream = hub.subscribe(getPublicKeyId(me.publicKey));
@@ -636,12 +644,6 @@ async function establishConnection(
   //Check if a file with this name exists in identity
   //Generate keys
   const mykeys = await generateKeys(name);
-
-  // ipcMain.on("generate_token", (event, message) => {
-  //   const invite = generateInviteToken(mykeys);
-  //   event.sender.send("generate_token", invite);
-  // });
-
   //TODO: refactor
   const identityPath = path.join(__dirname, "../../files", "identities", name);
   // const identityPath = path.join(__dirname, "../../files", "me", name);
@@ -656,7 +658,6 @@ async function establishConnection(
 
   //Listen for incoming requests to test availability
   listenForConnectionRequests(mykeys, name, initiator, friends, window);
-
   //Run this code every 15 seconds
   const timerId = setInterval(function () {
     pollIfFriendsOnline(mykeys, name, initiator, window);
@@ -714,7 +715,28 @@ async function registerListeners(window: BrowserWindow) {
 }
 
 async function registerProtocols() {
-  app.setAsDefaultProtocolClient("atom");
+  app.setAsDefaultProtocolClient("p2p");
+}
+
+async function parseInviteLink(url) {
+  const baseOffset = 6; //When the params begin after p2p://
+  const nameOffset = 5; //The amount of chars in name=
+  const inviteOffset = 7; //The amount of chars in invite=
+  if (url.search("name=") !== -1) {
+    if (url.search("invite=") !== -1) {
+      const urlWithBaseTruncated = url.substring(baseOffset);
+      const splitByParamsUrl = urlWithBaseTruncated.split("&");
+      //Will split by p2p://user=xyz, id=abc
+      const rawNameParam = splitByParamsUrl[0];
+      const rawInviteParam = splitByParamsUrl[1];
+      const nameParam = rawNameParam.substring(nameOffset);
+      const inviteParam = rawInviteParam.substring(inviteOffset);
+    } else {
+      console.error("Url string does not contain name param");
+    }
+  } else {
+    console.error("Url string does not contain name param");
+  }
 }
 
 // This method will be called when Electron has finished
@@ -723,9 +745,8 @@ async function registerProtocols() {
 app
   .on("ready", () => {
     const window = createWindow();
-    registerProtocols();
+    registerProtocols(); //Register protocol routes
     registerListeners(window);
-    //Register protocol routes
   })
 
   .whenReady()
@@ -735,7 +756,7 @@ app
 // Handle the protocol. In this case, we choose to show an Error Box.
 app.on("open-url", (event, url) => {
   event.preventDefault();
-
+  parseInviteLink(url);
   dialog.showErrorBox("Welcome Back", `You arrived from: ${url}`);
 });
 // Quit when all windows are closed, except on macOS. There, it's common
