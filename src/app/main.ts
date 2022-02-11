@@ -60,8 +60,6 @@ type Keys = {
 };
 
 async function generateKeys(identity: string): Promise<Keys> {
-  //TODO: don't write this to the hidden webpack dir
-  //TODO: also write these keys to a folder
   const identityPath = path.join(
     __dirname,
     "../../files",
@@ -69,29 +67,11 @@ async function generateKeys(identity: string): Promise<Keys> {
     identity
   );
 
-  // const persistantIdentityPath = path.join(
-  //   __dirname,
-  //   "../../files",
-  //   "me",
-  //   identity
-  // );
-
   console.log(identityPath);
   await fs.mkdirp(identityPath);
 
-  // await fs.mkdirp(persistantIdentityPath);
-
   const publicKeyPath = path.join(identityPath, "public.key");
   const secretKeyPath = path.join(identityPath, "secret.key");
-
-  // const persistantPublicKeyPath = path.join(
-  //   persistantIdentityPath,
-  //   "public.key"
-  // );
-  // const persistantSecretKeyPath = path.join(
-  //   persistantIdentityPath,
-  //   "secret.key"
-  // );
 
   let me: { publicKey: Buffer; secretKey: Buffer };
   if (!(await fs.pathExists(publicKeyPath))) {
@@ -106,18 +86,6 @@ async function generateKeys(identity: string): Promise<Keys> {
     };
   }
 
-  // if (!(await fs.pathExists(persistantPublicKeyPath))) {
-  //   console.log("Generating individual keys.");
-  //   me = createKeys();
-  //   await fs.writeFile(persistantPublicKeyPath, me.publicKey);
-  //   await fs.writeFile(persistantSecretKeyPath, me.secretKey);
-  // } else {
-  //   me = {
-  //     publicKey: await fs.readFile(persistantPublicKeyPath),
-  //     secretKey: await fs.readFile(persistantSecretKeyPath),
-  //   };
-  // }
-
   return me;
 }
 
@@ -126,7 +94,7 @@ async function writeToFS(fileNamePath: string, message: string) {
   if (message.length > 0) {
     fs.appendFile(fileNamePath, message + "\n", (err) => {
       if (err) {
-        console.log("Error appending to file" + err);
+        console.error("Error appending to file" + err);
       }
       // } else {
       //   // Get the file contents after the append operation
@@ -136,6 +104,8 @@ async function writeToFS(fileNamePath: string, message: string) {
       //   )
       // }
     });
+  } else {
+    console.error("Message to write to fs is empty ");
   }
 }
 
@@ -150,20 +120,16 @@ async function buildChatDir(identity: string, name: string): Promise<string> {
 
   //If file has not already been created, create it
   if (!(await fs.pathExists(chatSessionPath))) {
-    //check if opposite path exists too
+    //TODO: check if opposite path exists too
     console.log("Generating unique chat file." + chatSessionPath);
     fs.open(chatSessionPath, "wx", function (err, fd) {
       //Wx flag creates empty file async
-      // handle error
       console.error(err);
-
       fs.close(fd, function (err) {
-        // handle error and close fd
         console.error(err);
       });
     });
   }
-
   return chatSessionPath;
 }
 
@@ -193,8 +159,7 @@ function connect(
   name: string,
   initiator: boolean,
   friends: Record<string, string>,
-  window: BrowserWindow,
-  pollingAvailability: boolean
+  window: BrowserWindow
 ) {
   //Get public key of recipient of message
   const publicKey = Buffer.from(friends[name], "base64");
@@ -267,23 +232,16 @@ function connect(
 
   peer.on("connect", async () => {
     console.log("Connected!");
-
     //TODO: Update the last connected key...
-    if (!pollingAvailability) {
-      //ASYNC or SYNC? IPCMain listener here that waits for updates from the renderer
-      ipcMain.on("client_submitting_message", async (event, message) => {
-        console.log("Listener for writing new data fired");
-        console.log(message); //Message submitted by client
-        const log = formatMessageToStringifiedLog(identity, message); //Check this
-        const chatSessionPath = await buildChatDir(identity, name);
-        writeToFS(chatSessionPath, log);
-        peer.send(log); //Send the client submitted message to the peer
-        //SEND the message back to the renderer process?
-        event.reply("client_submitted_message", log);
-      }); //TODO: check the async callback is allowed...
-    } else {
-      console.log("Peer with name " + name + " is available to connect...");
-    }
+    ipcMain.on("client_submitting_message", async (event, message) => {
+      console.log("Listener for writing new data fired");
+      console.log(message); //Message submitted by client
+      const log = formatMessageToStringifiedLog(identity, message); //Check this
+      const chatSessionPath = await buildChatDir(identity, name);
+      writeToFS(chatSessionPath, log);
+      peer.send(log); //Send the client submitted message to the peer
+      event.reply("client_submitted_message", log); //Send the message back to the renderer process
+    });
   });
 
   //Received new message from sending peer
@@ -291,12 +249,9 @@ function connect(
     const receivedLog = data.toString("utf8");
     console.log(name + ">", data.toString("utf8"));
     //Received message from peer, write this to the local fs
-    if (!pollingAvailability) {
-      // const log = formatMessageToStringifiedLog(identity, data.toString("utf8")); //Check this
-      const chatSessionPath = await buildChatDir(identity, name);
-      writeToFS(chatSessionPath, receivedLog);
-      window.webContents.send("peer_submitted_message", receivedLog);
-    }
+    const chatSessionPath = await buildChatDir(identity, name);
+    writeToFS(chatSessionPath, receivedLog);
+    window.webContents.send("peer_submitted_message", receivedLog);
   });
   peer.on("close", () => {
     console.log("close");
@@ -317,7 +272,6 @@ function generateInviteLink(
 ): string {
   // Create an invite payload
   const invite = Buffer.concat([password, me.publicKey]).toString("base64");
-  // Create an invite payload
   //Format as a magic link
   const baseUrl = "p2p://";
   const nameParam = "name=" + name;
@@ -343,7 +297,6 @@ async function initiateHandshake(
   window: BrowserWindow
 ) {
   const password = randomBytes(32);
-  // const invite = Buffer.concat([password, me.publicKey]).toString("base64");
   const inviteLink = generateInviteLink(password, name, me, window);
 
   const publicKey = await new Promise<Buffer>((resolve) => {
@@ -395,12 +348,10 @@ async function initiateHandshake(
   await fs.writeJSON(friendsPath, friends);
 
   //Package and send a list of the user's friends
-  //May need to await connection
   window.webContents.send("get_all_friends_of_user", friends);
 
   //Now that encryption matches, attempt to connect
-  const pollingAvailability = false;
-  connect(me, name, recipient, initiator, friends, window, pollingAvailability);
+  connect(me, name, recipient, initiator, friends, window);
 }
 
 //  This function accepts a handshake to connect to a peer
@@ -468,12 +419,10 @@ async function acceptHandshake(
   await fs.writeJSON(friendsPath, friends);
 
   //Package and send a list of the user's friends
-  //May need to await connection
   window.webContents.send("get_all_friends_of_user", friends);
 
   //Now that encryption matches, attempt to connect
-  const pollingAvailability = false;
-  connect(me, name, invitedBy, initiator, friends, window, pollingAvailability);
+  connect(me, name, invitedBy, initiator, friends, window);
 }
 
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -507,8 +456,7 @@ async function pollIfFriendsOnline(
   window: BrowserWindow
 ) {
   //From a user's name, search for their JSON file and read it...
-  // const identityPath = path.join(__dirname, "../../files", "identities", name);
-  const identityPath = path.join(__dirname, "../../files", "me", name);
+  const identityPath = path.join(__dirname, "../../files", "identities", name);
 
   const friendsPath = path.join(identityPath, "friends.json");
   let friends: Record<string, string> = {};
@@ -519,6 +467,7 @@ async function pollIfFriendsOnline(
   console.log("After retrieving friends...");
   console.log(friends);
 
+  //TODO: write last_seen to file
   const lastSeenPath = path.join(__dirname, "../../files", "lastSeen", name);
   const lastSeenFriendsPath = path.join(identityPath, "lastSeenFriends.json");
 
@@ -530,7 +479,6 @@ async function pollIfFriendsOnline(
     console.log(key + ":" + value);
     //Given the key and value, attempt to connect to the peer and report its status
     const friendName = key;
-    // const publicKey = Buffer.from(value, "utf-8");
     const publicKey = value;
     //Now that encryption matches, attempt to connect to each peer in the list
     console.log("Polling if " + friendName + " is available");
@@ -538,7 +486,7 @@ async function pollIfFriendsOnline(
     const channelMessage: PublicChannelMessage = {
       type: "syn",
       from: me.publicKey.toString("base64"),
-      payload: "This is a test",
+      payload: "This is a test", //TODO: refactor this...
     };
 
     hub.broadcast(publicKey + "invite", channelMessage); //Broadcast to public key of peer we are testing
@@ -546,7 +494,6 @@ async function pollIfFriendsOnline(
 
     //Listen for an ACK for a set period of time
     let ackReceived = false;
-
     setTimeout(function () {
       if (!ackReceived) {
         // show notification that evt has not been fired
@@ -602,10 +549,8 @@ async function listenForConnectionRequests(
     if (message.type === "syn") {
       let matchFound = false;
       for (const [key, value] of friendsKeyValuePairs) {
-        // console.log(key + ":" + value);
         const friendName = key;
         const publicKey = value;
-        // const friendPublicKey = Buffer.from(value, "utf8"); //TODO: verify this
         if (message.from === publicKey) {
           console.log(
             "Match found from " + friendName + " connection listener"
@@ -620,14 +565,12 @@ async function listenForConnectionRequests(
       if (!matchFound) {
         console.error(
           "message from a person not in the user's friend.json " + message.from
-        ); //No match was found from the user's friends json, so rejecting unknown
+        );
       }
     } else {
       console.error("wrong public channel message type" + message.type);
     }
   });
-
-  //Await data
 }
 
 //GLOBAL VARS TO TEST
@@ -665,7 +608,6 @@ async function establishConnection(
     pollIfFriendsOnline(mykeys, name, initiator, window);
   }, 1000 * 15);
   //Package and send a list of the user's friends
-  //May need to await connection
   // window.webContents.send("get_all_friends_of_user", friends);
 
   if (initiator) {
@@ -702,13 +644,6 @@ async function registerListeners(window: BrowserWindow) {
   /**
    * This comes from bridge integration, check bridge.ts
    */
-
-  //  writeToFS
-  // ipcMain.on("string_to_write", (_, message) => {
-  //   writeToFS(message);
-  //   console.log(message);
-  // });
-
   ipcMain.on("peer_metadata", (_, message) => {
     console.log(message);
     establishConnection(window, message);
@@ -742,7 +677,6 @@ async function handleInviteLink(url: string, window: BrowserWindow) {
           console.log(
             "received response from connection confirmation " + message
           );
-
           resolve(message);
         });
       });
@@ -764,10 +698,11 @@ async function handleInviteLink(url: string, window: BrowserWindow) {
         if (await fs.pathExists(friendsPath)) {
           friends = await fs.readJSON(friendsPath);
         }
+        const initiator = false;
         acceptHandshake(
           mykeys,
           GLOBAL_USER_NAME,
-          false,
+          initiator,
           nameParam,
           inviteParam,
           friends,
@@ -790,27 +725,24 @@ async function handleInviteLink(url: string, window: BrowserWindow) {
 // Some APIs can only be used after this event occurs.
 
 //Make window a global variable accessible across
-// let window: BrowserWindow;
-let window = null; //TODO: declare this type correctly for TS
+
+//Declaring global variables to be used across the application
+let window: BrowserWindow = null; //TODO: declare this type correctly for TS
+
 app
   .on("ready", () => {
-    // const window = createWindow();
     window = createWindow();
-
     registerProtocols(); //Register protocol routes
     registerListeners(window);
-    // Handle the protocol. In this case, we choose to show an Error Box.
   })
 
   .whenReady()
   .then(() => {
     app.on("open-url", (event, url) => {
       event.preventDefault();
-      // if (app.isReady()) {
       //TODO: rewrite this to send data when app is not open
       handleInviteLink(url, window);
       dialog.showErrorBox("Welcome Back", `You arrived from: ${url}`);
-      // }
     });
   })
 
@@ -832,6 +764,3 @@ app.on("activate", () => {
     createWindow();
   }
 });
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
