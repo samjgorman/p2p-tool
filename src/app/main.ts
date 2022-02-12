@@ -59,6 +59,11 @@ type Keys = {
   secretKey: Buffer;
 };
 
+type FriendMetadata = {
+  publicKey: string;
+  lastSeen: string;
+};
+
 async function generateKeys(identity: string): Promise<Keys> {
   const identityPath = path.join(
     __dirname,
@@ -158,11 +163,11 @@ function connect(
   identity: string,
   name: string,
   initiator: boolean,
-  friends: Record<string, string>,
+  friends: Record<string, FriendMetadata>,
   window: BrowserWindow
 ) {
   //Get public key of recipient of message
-  const publicKey = Buffer.from(friends[name], "base64");
+  const publicKey = Buffer.from(friends[name].publicKey, "base64");
   console.log("Public key of recipient");
   console.log(friends[name]);
   const peer = new Peer({
@@ -292,7 +297,7 @@ async function initiateHandshake(
   name: string,
   initiator: boolean,
   recipient: string,
-  friends: Record<string, string>,
+  friends: Record<string, FriendMetadata>,
   friendsPath: string,
   window: BrowserWindow
 ) {
@@ -344,7 +349,13 @@ async function initiateHandshake(
   };
   hub.broadcast(getPublicKeyId(publicKey), channelMessage);
 
-  friends[recipient] = publicKey.toString("base64"); //this should be recipient?
+  // friends[recipient] = publicKey.toString("base64"); //this should be recipient?
+  // let friendMetadata: FriendMetadata;
+  const friendMetadata: FriendMetadata = { publicKey: "", lastSeen: "" };
+  friendMetadata.publicKey = publicKey.toString("base64");
+  console.log("Friend md in initiate" + friendMetadata.publicKey);
+  friends[recipient] = friendMetadata;
+
   await fs.writeJSON(friendsPath, friends);
 
   //Package and send a list of the user's friends
@@ -361,7 +372,7 @@ async function acceptHandshake(
   initiator: boolean,
   invitedBy: string,
   inviteToken: string,
-  friends: Record<string, string>,
+  friends: Record<string, FriendMetadata>,
   friendsPath: string,
   window: BrowserWindow
 ) {
@@ -415,7 +426,11 @@ async function acceptHandshake(
     });
   });
 
-  friends[invitedBy] = publicKey.toString("base64");
+  const friendMetadata: FriendMetadata = { publicKey: "", lastSeen: "" };
+  friendMetadata.publicKey = publicKey.toString("base64");
+  console.log("Friend md in initiate" + friendMetadata.publicKey);
+
+  friends[invitedBy] = friendMetadata;
   await fs.writeJSON(friendsPath, friends);
 
   //Package and send a list of the user's friends
@@ -451,12 +466,26 @@ const createWindow = (): BrowserWindow => {
 
 async function updateLastSeen(name: string, friendName: string) {
   //TODO: write this last_seen to file...
-  const lastSeenPath = path.join(__dirname, "../../files", "lastSeen", name);
-  const lastSeenFriendsPath = path.join(lastSeenPath, "lastSeenFriends.json");
-  let lastSeenFriends: Record<string, string> = {};
-  if (await fs.pathExists(lastSeenFriendsPath)) {
-    lastSeenFriends = await fs.readJSON(lastSeenFriendsPath);
+  // const lastSeenPath = path.join(__dirname, "../../files", "lastSeen", name);
+  // const lastSeenFriendsPath = path.join(lastSeenPath, "lastSeenFriends.json");
+  // let lastSeenFriends: FriendsSchema = {};
+
+  // if (await fs.pathExists(lastSeenFriendsPath)) {
+  //   lastSeenFriends = await fs.readJSON(lastSeenFriendsPath);
+  // }
+  // lastSeenFriends[friendName] = Date.now();
+  // await fs.writeJSON(lastSeenFriendsPath, lastSeenFriends);
+  const identityPath = path.join(__dirname, "../../files", "identities", name);
+  const friendsPath = path.join(identityPath, "friends.json");
+  let friends: Record<string, FriendMetadata> = {}; //may need an array
+
+  if (await fs.pathExists(friendsPath)) {
+    friends = await fs.readJSON(friendsPath);
   }
+  // const friendMetadata: FriendMetadata = friends[friendName];
+  friends[friendName].lastSeen = Date.now().toString();
+
+  await fs.writeJSON(friendsPath, friends);
 }
 
 async function pollIfFriendsOnline(
@@ -467,9 +496,8 @@ async function pollIfFriendsOnline(
 ) {
   //From a user's name, search for their JSON file and read it...
   const identityPath = path.join(__dirname, "../../files", "identities", name);
-
   const friendsPath = path.join(identityPath, "friends.json");
-  let friends: Record<string, string> = {};
+  let friends: Record<string, FriendMetadata> = {}; //may need an array
 
   if (await fs.pathExists(friendsPath)) {
     friends = await fs.readJSON(friendsPath);
@@ -485,8 +513,9 @@ async function pollIfFriendsOnline(
     console.log(key + ":" + value);
     //Given the key and value, attempt to connect to the peer and report its status
     const friendName = key;
-    const publicKey = value;
-    //Now that encryption matches, attempt to connect to each peer in the list
+    // const publicKey = value;
+    const friendMetadata = value;
+    const publicKey = friendMetadata.publicKey; //Now that encryption matches, attempt to connect to each peer in the list
     console.log("Polling if " + friendName + " is available");
 
     const channelMessage: PublicChannelMessage = {
@@ -513,6 +542,7 @@ async function pollIfFriendsOnline(
 
       if (message.type === "syn-ack") {
         if (message.from == publicKey) {
+          //===
           console.log(
             "Ack received from remote peer," + friendName + " is online "
           );
@@ -535,7 +565,7 @@ async function listenForConnectionRequests(
   me: Keys,
   name: string,
   initiator: boolean,
-  friends: Record<string, string>,
+  friends: Record<string, FriendMetadata>,
   window: BrowserWindow
 ) {
   const inviteAck: InviteAckMessage = {
@@ -558,8 +588,12 @@ async function listenForConnectionRequests(
       let matchFound = false;
       for (const [key, value] of friendsKeyValuePairs) {
         const friendName = key;
-        const publicKey = value;
-        if (message.from === publicKey) {
+        // const publicKey = value;
+        const friendMetadata = value;
+        const publicKey = friendMetadata.publicKey;
+
+        if (message.from == publicKey) {
+          //===
           console.log(
             "Match found from " + friendName + " connection listener"
           );
@@ -599,9 +633,10 @@ async function establishConnection(
   const mykeys = await generateKeys(name);
   //TODO: refactor
   const identityPath = path.join(__dirname, "../../files", "identities", name);
-  // const identityPath = path.join(__dirname, "../../files", "me", name);
   const friendsPath = path.join(identityPath, "friends.json");
-  let friends: Record<string, string> = {};
+  // let friends: Record<string, string> = {};
+  let friends: Record<string, FriendMetadata> = {};
+
   if (await fs.pathExists(friendsPath)) {
     friends = await fs.readJSON(friendsPath);
   }
@@ -702,7 +737,9 @@ async function handleInviteLink(url: string, window: BrowserWindow) {
         );
         // const identityPath = path.join(__dirname, "../../files", "me", name);
         const friendsPath = path.join(identityPath, "friends.json");
-        let friends: Record<string, string> = {};
+        // let friends: Record<string, string> = {};
+        let friends: Record<string, FriendMetadata> = {};
+
         if (await fs.pathExists(friendsPath)) {
           friends = await fs.readJSON(friendsPath);
         }
