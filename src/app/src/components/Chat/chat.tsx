@@ -16,7 +16,7 @@ import ChatMessage from "../ChatMessage/message";
     const [messagesToRenderStack, setMessagesToRenderStack] = useState([]);
     useEffect(() => {
       //Listen for submitted messages
-      window.Main.on("client_submitted_message", (event,arg) =>{
+      window.Main.on("i_submitted_message", (event,arg) =>{
           console.log("Chat object received")
           console.log(event) 
           const messageObjToRender = JSON.parse(event)

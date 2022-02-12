@@ -9,7 +9,7 @@ function Confirmation(props){
 
 
     useEffect(() => {
-        window.Main.on("name_connecting_confirmation", (event,arg) =>{
+        window.Main.on("confirm_connection", (event,arg) =>{
             console.log("Confirmation name object received")
             console.log(event) 
             // const messageObjToRender = JSON.parse(event)

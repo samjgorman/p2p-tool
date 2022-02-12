@@ -33,7 +33,7 @@ async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
       }
 
     const peerMetadata = JSON.stringify(rawPeerMetadata)
-    window.Main.passPeerMetadata(peerMetadata );
+    window.Main.sendPeerMetadata(peerMetadata );
 }
 
 
@@ -64,7 +64,7 @@ function Connect() {
   useEffect(() => {
     // Listen for the event
     //Find way to listen for API
-    window.Main.on("generate_invite_link", (event, message) => {
+    window.Main.on("send_invite_link", (event, message) => {
       console.log("Received invite link")
       setToken(event);
       console.log(event)

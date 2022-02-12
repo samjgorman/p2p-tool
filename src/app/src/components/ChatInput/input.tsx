@@ -6,7 +6,7 @@ async function handleMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const raw_message = (event.target as HTMLInputElement);
     const payload = raw_message[0].value
-    window.Main.submitMessageToPeer( payload);
+    window.Main.sendMessageToPeer( payload);
 }
 
 
@@ -16,7 +16,6 @@ async function handleMessage(event: React.FormEvent<HTMLFormElement>) {
  *  * @param props is an object that contains these properties
  * 
 **/
-
 function Chat() {
 
     return (

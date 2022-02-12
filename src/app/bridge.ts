@@ -14,17 +14,16 @@ export const api = {
     ipcRenderer.send("if_connection_confirmed", message);
   },
 
-  sendInviteToken: (message: string) => {
-    ipcRenderer.send("generate_invite_link", message);
+  sendInviteLink: (message: string) => {
+    ipcRenderer.send("send_invite_link", message);
   },
 
-  submitMessageToPeer: (message: string) => {
-    // console.log("I'll write to the fs one day!" + string_to_write)
-    ipcRenderer.send("client_submitting_message", message);
+  sendMessageToPeer: (message: string) => {
+    ipcRenderer.send("send_message_to_peer", message);
   },
 
-  passPeerMetadata: (peer_metadata: string) => {
-    ipcRenderer.send("peer_metadata", peer_metadata);
+  sendPeerMetadata: (peer_metadata: string) => {
+    ipcRenderer.send("send_peer_metadata", peer_metadata);
   },
 
   // getAllFriendsOfUser: (placeholder: string) => {
