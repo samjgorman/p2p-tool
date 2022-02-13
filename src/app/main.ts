@@ -464,17 +464,12 @@ const createWindow = (): BrowserWindow => {
   return mainWindow;
 };
 
-async function updateLastSeen(name: string, friendName: string) {
+async function updateLastSeen(
+  name: string,
+  friendName: string,
+  window: BrowserWindow
+) {
   //TODO: write this last_seen to file...
-  // const lastSeenPath = path.join(__dirname, "../../files", "lastSeen", name);
-  // const lastSeenFriendsPath = path.join(lastSeenPath, "lastSeenFriends.json");
-  // let lastSeenFriends: FriendsSchema = {};
-
-  // if (await fs.pathExists(lastSeenFriendsPath)) {
-  //   lastSeenFriends = await fs.readJSON(lastSeenFriendsPath);
-  // }
-  // lastSeenFriends[friendName] = Date.now();
-  // await fs.writeJSON(lastSeenFriendsPath, lastSeenFriends);
   const identityPath = path.join(__dirname, "../../files", "identities", name);
   const friendsPath = path.join(identityPath, "friends.json");
   let friends: Record<string, FriendMetadata> = {}; //may need an array
@@ -486,6 +481,8 @@ async function updateLastSeen(name: string, friendName: string) {
   friends[friendName].lastSeen = Date.now().toString();
 
   await fs.writeJSON(friendsPath, friends);
+
+  window.webContents.send("get_all_friends_of_user", friends);
 }
 
 async function pollIfFriendsOnline(
@@ -547,7 +544,7 @@ async function pollIfFriendsOnline(
             "Ack received from remote peer," + friendName + " is online "
           );
           ackReceived = true;
-          updateLastSeen(name, friendName);
+          updateLastSeen(name, friendName, window);
 
           stream.destroy();
         } else {
@@ -634,7 +631,6 @@ async function establishConnection(
   //TODO: refactor
   const identityPath = path.join(__dirname, "../../files", "identities", name);
   const friendsPath = path.join(identityPath, "friends.json");
-  // let friends: Record<string, string> = {};
   let friends: Record<string, FriendMetadata> = {};
 
   if (await fs.pathExists(friendsPath)) {
@@ -649,9 +645,9 @@ async function establishConnection(
   //Run this code every 15 seconds
   const timerId = setInterval(function () {
     pollIfFriendsOnline(mykeys, name, initiator, window);
+    //Package and send a list of the user's friends
+    window.webContents.send("get_all_friends_of_user", friends);
   }, 1000 * 15);
-  //Package and send a list of the user's friends
-  // window.webContents.send("get_all_friends_of_user", friends);
 
   if (initiator) {
     //Send generated token to client to render
