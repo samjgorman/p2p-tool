@@ -65,8 +65,6 @@ function FriendObject(props){
         console.log("rendered ran")
 
         //Run this every 5 seconds
-        // const interval = setInterval(() => setTime(Date.now()), 1000);
-
         //Listen to the route to get all friends for the given user
         window.Main.on("get_all_friends_of_user", (event,arg) =>{
             console.log("Friends object received")
