@@ -79,13 +79,11 @@ export async function pollIfFriendsOnline(
 
   //Now, write the contents of the friends object to the lastSeenFriends
   const friendsKeyValuePairs = Object.entries(friends); //get key value pairs
-  const pollingAvailability = true; //Set to polling availability mode to avoid reading and writing to files
 
   for (const [key, value] of friendsKeyValuePairs) {
     console.log(key + ":" + value);
     //Given the key and value, attempt to connect to the peer and report its status
     const friendName = key;
-    // const publicKey = value;
     const friendMetadata = value;
     const publicKey = friendMetadata.publicKey; //Now that encryption matches, attempt to connect to each peer in the list
     console.log("Polling if " + friendName + " is available");
@@ -96,6 +94,7 @@ export async function pollIfFriendsOnline(
       payload: "This is a test", //TODO: refactor this...
     };
 
+    //TODO: Encrypt this message
     hub.broadcast(publicKey + "invite", channelMessage); //Broadcast to public key of peer we are testing
     const stream = hub.subscribe(me.publicKey.toString("base64") + "ack"); //Subscribe to your own public key
 
@@ -103,7 +102,7 @@ export async function pollIfFriendsOnline(
     let ackReceived = false;
     setTimeout(function () {
       if (!ackReceived) {
-        // show notification that evt has not been fired
+        // show notification that event has not been fired
         console.log("Ack not received " + friendName + " is offline");
         stream.destroy();
       }
@@ -151,6 +150,7 @@ export async function listenForConnectionRequests(
   };
 
   //Subscribe to hub of my own public key
+  //TODO: Encrypt this message
   const stream = hub.subscribe(me.publicKey.toString("base64") + "invite"); //Check the iD here
   const friendsKeyValuePairs = Object.entries(friends); //get key value pairs
 
