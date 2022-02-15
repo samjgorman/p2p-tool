@@ -8,9 +8,12 @@ import {
 } from "../onlineOffline";
 
 //Test:
-describe("Test", function () {
-  it("should return true when peer is online", function () {
-    const result = "hello";
-    assert.equal(result, "hello");
+describe("isRemotePeerOnline", function () {
+  it("Returns false when peer is unknown", async function () {
+    const result: boolean = await isRemotePeerOnline(
+      "Sam",
+      "unknownFriendNotInRecords"
+    );
+    assert.equal(result, false);
   });
 });
