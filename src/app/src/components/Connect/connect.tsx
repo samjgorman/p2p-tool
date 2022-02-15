@@ -3,6 +3,8 @@ import React, {useState, useEffect} from "react";
 
 
 async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
+    event.preventDefault(); //test
+
     console.log(event.target[0].value)
     console.log(event.target[1].value)
     //  Send this information to the main thread to begin a webrtc connection
@@ -31,7 +33,7 @@ async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
       }
 
     const peerMetadata = JSON.stringify(rawPeerMetadata)
-    window.Main.passPeerMetadata(peerMetadata );
+    window.Main.sendPeerMetadata(peerMetadata );
 }
 
 
@@ -42,18 +44,18 @@ async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
  *  * @param props is an object that contains these properties
  * 
 **/
-
-
 function Connect() {
 
   const [initiator, setInitiator] = useState(false);
-  const [token, setToken] = useState(0);
+  const [invite, setInvite] = useState("");
+  const [inviteLoaded, setInviteLoaded] = useState(false);
+
 
 
   function handleChoice(val:string){
     if(val === "send"){
       setInitiator(true);
-      window.Main.sendInviteToken("Requested token");
+      // window.Main.sendInviteToken("Requested token");
   
     }
     if(val === "accept"){
@@ -64,13 +66,15 @@ function Connect() {
   useEffect(() => {
     // Listen for the event
     //Find way to listen for API
-    window.Main.on("generate_token", (event, val) => {
-      setToken(val);
-      console.log(val)
+    window.Main.on("send_invite_link", (event, message) => {
+      console.log("Received invite link")
+      setInvite(event);
+      console.log(event)
+      setInviteLoaded(true)
       //Finish this
     });
    
-  }, []);
+  }); 
 
     return (
         <div className="LiveChatMessageForm">
@@ -106,8 +110,8 @@ function Connect() {
             <input className="submit-connection-button" type="submit" value="Send" />
           </form>
 
-            {initiator && 
-          <div>Send this payload: {token} </div>
+            { inviteLoaded && 
+          <div>Send this invite link: {invite} </div>
             }
 
         </div>

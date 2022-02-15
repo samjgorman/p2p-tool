@@ -1,12 +1,12 @@
 import React from 'react';
-import { ReactNode, ButtonHTMLAttributes } from 'react'
+import { ButtonHTMLAttributes } from 'react'
 
 
 async function handleMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const raw_message = (event.target as HTMLInputElement);
     const payload = raw_message[0].value
-    window.Main.submitMessageToPeer( payload);
+    window.Main.sendMessageToPeer( payload);
 }
 
 
@@ -16,12 +16,10 @@ async function handleMessage(event: React.FormEvent<HTMLFormElement>) {
  *  * @param props is an object that contains these properties
  * 
 **/
-
 function Chat() {
 
     return (
         <div className="LiveChatMessageForm">
-            <div>Send a chat message</div>
           <form
             className="liveChat-message-form"
             noValidate

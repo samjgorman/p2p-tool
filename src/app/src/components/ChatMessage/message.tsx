@@ -14,6 +14,9 @@ import React from "react";
 
  function ChatMessage(props) { //refactor for TS 
 
+  const readableTimestamp = new Date(props.timestamp).toLocaleTimeString("en-US")
+
+
     return (
       <div className="LiveChatMessage">
           
@@ -23,7 +26,7 @@ import React from "react";
                 {props.chatMessage}
               </p>
               <p className="message-time">
-                {props.timestamp}
+                {readableTimestamp}
                 {/* {timeSince(props.liveChatMessage.time_sent.seconds)} */}
               </p>
             </div>

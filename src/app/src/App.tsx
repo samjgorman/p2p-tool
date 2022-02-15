@@ -1,13 +1,13 @@
 import { GlobalStyle } from './styles/GlobalStyle'
 
-import { Greetings } from './components/Greetings'
+import { MainContainer } from './components/MainContainer'
 import React from 'react'
 
 export function App() {
   return (
     <>
       <GlobalStyle />
-      <Greetings />
+      <MainContainer />
     </>
   )
 }

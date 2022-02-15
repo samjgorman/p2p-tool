@@ -1,10 +1,30 @@
 
 import React, { useEffect, useState } from "react";
 
+type FriendMetadata = {
+  publicKey: string;
+  lastSeen: string;
+};
+
 function FriendObject(props){
 
+  function handleFriend(friend:string){
+    //TODO: Request the local chat file for this friend and render it
+    // const friendName = friend[0].toString()
+    window.Main.getFriendChatObject(friend) //TODO: verify this
+
+  }
+
+  const lastSeenTimestamp:number = parseInt(props.lastSeen)
+  const readableLastSeen = new Date(lastSeenTimestamp).toLocaleTimeString("en-US")
+  //TODO: If empty, state that user is offline
+
     return (
-        <div className="FriendObject">{props.friend}</div>
+      <div className="FriendobjectContainer" onClick={()=> handleFriend(props.name)}
+> 
+        <div className="FriendObject">{props.name}</div>
+        <div className="FriendObject">{props.lastSeen === "" ? "Offline" : readableLastSeen}</div> 
+        </div>
     );
 }
 
@@ -23,37 +43,64 @@ function FriendObject(props){
     const [friends, setFriends] = useState([]);
     const [friendsPopulated, setFriendsPopulated] = useState(false);
 
+    function convertRecordToArray(friends: Record<string, FriendMetadata>):Array<Array<string>>{
+      //https://stackoverflow.com/questions/61350184/how-to-use-foreach-on-recordstring-object-in-typescript-and-angular
+      const friendsArr:Array<Array<string>> = []
+      for (const key in friends) {
+          const friendObject = []
+            // console.log(key)
+              friendObject.push(key)
+            for (const key2 in friends[key]) {
+                // console.log(friends[key][key2]);
+                  friendObject.push(friends[key][key2])  
+           
+            }
+          
+          friendsArr.push(friendObject)
+        }
+
+        return friendsArr
+
+    }
+
+
 
     //TODO: function that reads from the files/friends directory
     //And presents a list of friends 
     useEffect( () =>{
         console.log("rendered ran")
+
+        //Run this every 5 seconds
         //Listen to the route to get all friends for the given user
         window.Main.on("get_all_friends_of_user", (event,arg) =>{
             console.log("Friends object received")
             console.log(event) 
-            const friendsObjToRender = JSON.parse(event)
-            const newState = [...friends, friendsObjToRender];
-            setFriends(newState)
+            const friendsRecord = event  //Typecheck this as a Record<string, FriendMetadata>
+
+            const friendsArray = convertRecordToArray(friendsRecord)
+            console.log(friendsArray) 
+            setFriends(friendsArray)
             setFriendsPopulated(true)
         })
 
         return function cleanup() {
             window.Main.removeAllListeners("get_all_friends_of_user")
+            // clearInterval(interval);
+
            };
         
-    })
+    }) //Fire once?
 
-    console.log("LEN OF FRIEND ARR" + friends.length)
-    console.log(friends[0])
 
     return (
       <div className="FriendsListContainer">
 
-           {friendsPopulated && friends.map((friend, i) => (
+           {friendsPopulated && friends.map((friend: Record<string,FriendMetadata>, i) => (
               <FriendObject
                 key={i}
-                friend = {friend}
+                name = {friend[0]}
+                lastSeen = {friend[2]}
+
               />
             ))
            }

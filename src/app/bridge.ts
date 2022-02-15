@@ -10,17 +10,24 @@ export const api = {
    * The function below can accessed using `window.Main.writeToFS`
    */
 
-  sendInviteToken: (val: string) => {
-    ipcRenderer.send("generate_token");
+  ifConnectionConfirmed: (message: boolean) => {
+    ipcRenderer.send("if_connection_confirmed", message);
   },
 
-  submitMessageToPeer: (message: string) => {
-    // console.log("I'll write to the fs one day!" + string_to_write)
-    ipcRenderer.send("client_submitting_message", message);
+  sendInviteLink: (message: string) => {
+    ipcRenderer.send("send_invite_link", message);
   },
 
-  passPeerMetadata: (peer_metadata: string) => {
-    ipcRenderer.send("peer_metadata", peer_metadata);
+  sendMessageToPeer: (message: string) => {
+    ipcRenderer.send("send_message_to_peer", message);
+  },
+
+  sendPeerMetadata: (peer_metadata: string) => {
+    ipcRenderer.send("send_peer_metadata", peer_metadata);
+  },
+
+  getFriendChatObject: (friend: string) => {
+    ipcRenderer.send("get_friend_chat_object", friend);
   },
 
   // getAllFriendsOfUser: (placeholder: string) => {
