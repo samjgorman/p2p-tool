@@ -500,7 +500,8 @@ const createWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
     width: 1100,
     height: 700,
-    backgroundColor: "#191622",
+    // backgroundColor: "#191622",
+    backgroundColor: "white",
     webPreferences: {
       nodeIntegration: false, //TODO: refactor to false
       contextIsolation: true, //refactor to true
@@ -528,7 +529,6 @@ async function establishConnection(
   const name = peerMetadataObj.data.name;
   GLOBAL_USER_NAME = name;
 
-  //Check if a file with this name exists in identity
   //Generate keys
   const mykeys = await generateKeys(name);
   //TODO: refactor
