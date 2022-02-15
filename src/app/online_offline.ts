@@ -39,6 +39,46 @@ type FriendMetadata = {
 
 const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 
+//Util to determine if peer
+export async function isRemotePeerOnline(
+  name: string,
+  friend: string
+): Promise<boolean> {
+  //TODO: get the last_seen of this friend
+  //Compare to the current date
+  //TODO: have a "get friends" function
+  const identityPath = path.join(__dirname, "../../files", "identities", name);
+  const friendsPath = path.join(identityPath, "friends.json");
+  let friends: Record<string, FriendMetadata> = {}; //may need an array
+  if (await fs.pathExists(friendsPath)) {
+    friends = await fs.readJSON(friendsPath);
+  }
+
+  let matchFound = false;
+  const friendsKeyValuePairs = Object.entries(friends); //get key value pairs
+  for (const [key, value] of friendsKeyValuePairs) {
+    const friendName = key;
+    // const publicKey = value;
+    const friendMetadata = value;
+
+    if (friendName == friend) {
+      //===
+      matchFound = true;
+      const lastSeen = friendMetadata.lastSeen;
+      //If the lastSeen timestamp is less than the current date, user is offline
+      //If timestamp is 30 seconds less than the current date
+      const whenStatusWasLastChecked = Date.now() - 15000;
+      if (parseInt(lastSeen) < whenStatusWasLastChecked) {
+        return false;
+      } else {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 export async function updateLastSeen(
   name: string,
   friendName: string,
