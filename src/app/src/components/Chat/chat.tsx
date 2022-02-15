@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import ChatHistory from "../ChatHistory/chatHistory";
 import ChatInput from "../ChatInput/input";
 import ChatMessage from "../ChatMessage/message";
 
@@ -45,8 +46,11 @@ import ChatMessage from "../ChatMessage/message";
     });
 
     //TODO: Add a type here...
+  
     return (
       <div className="LiveChat">
+
+          <ChatHistory/> 
           {stackPopulated &&
            messagesToRenderStack.map((chatMessage, i) => (
               <ChatMessage

@@ -26,6 +26,10 @@ export const api = {
     ipcRenderer.send("send_peer_metadata", peer_metadata);
   },
 
+  getFriendChatObject: (friend: string) => {
+    ipcRenderer.send("get_friend_chat_object", friend);
+  },
+
   // getAllFriendsOfUser: (placeholder: string) => {
   //   ipcRenderer.send("get_all_friends_of_user", placeholder);
   // },

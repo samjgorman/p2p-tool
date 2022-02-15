@@ -4,6 +4,7 @@ import Peer from "simple-peer";
 import wrtc from "wrtc";
 import fs from "fs-extra";
 import * as path from "path";
+import readline from "readline";
 import {
   createKeys,
   randomBytes,
@@ -23,6 +24,12 @@ import {
 // plugin that tells the Electron app where to look for the Webpack-bundled app code (depending on
 // whether you're running in development or production).
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
+
+//GLOBAL VARS TO TEST
+let GLOBAL_USER_NAME: string;
+//Declaring global variables to be used across the application
+let window: BrowserWindow = null; //TODO: declare this type correctly for TS
+let CHAT_SESSION_PATH: string = null;
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -115,6 +122,46 @@ async function writeToFS(fileNamePath: string, message: string) {
     });
   } else {
     console.error("Message to write to fs is empty ");
+  }
+}
+
+async function getFriendChatObject(
+  window: BrowserWindow,
+  message: string
+): Promise<object> {
+  const friendName = message;
+  const chatHistoryObject: Array<object> = [];
+  console.log("Friend name in main" + friendName);
+  //TODO: retrieve json chat, stringify, and send
+  if (GLOBAL_USER_NAME !== null) {
+    // const candidateChatPath = GLOBAL_USER_NAME + "_" + friendName + ".json";
+    const candidateChatPath = await buildChatDir(GLOBAL_USER_NAME, friendName);
+    console.log("Candidate chat path is " + candidateChatPath);
+    if (await fs.pathExists(candidateChatPath)) {
+      // const chatHistoryObject = await fs.readJSON(candidateChatPath);
+      //Read the file line by line into an array of objects
+      const fileStream = fs.createReadStream(candidateChatPath);
+      const rl = readline.createInterface({
+        input: fileStream,
+        crlfDelay: Infinity,
+      });
+      // Note: we use the crlfDelay option to recognize all instances of CR LF
+      // ('\r\n') in input.txt as a single line break.
+      for await (const line of rl) {
+        // Each line in input.txt will be successively available here as `line`.
+        // console.log(`Line from file: ${line}`);
+        const lineObject = JSON.parse(line);
+        chatHistoryObject.push(lineObject);
+      }
+
+      return chatHistoryObject;
+    } else {
+      console.log("No chat history yet");
+      //    } else{
+      //   console.error("User's identity not yet established ")
+    }
+  } else {
+    console.error("Identity not yet established");
   }
 }
 
@@ -246,8 +293,10 @@ function connect(
       console.log("Listener for writing new data fired");
       console.log(message); //Message submitted by client
       const log = formatMessageToStringifiedLog(identity, message); //Check this
-      const chatSessionPath = await buildChatDir(identity, name);
-      writeToFS(chatSessionPath, log);
+      // const chatSessionPath = await buildChatDir(identity, name);
+      CHAT_SESSION_PATH = await buildChatDir(identity, name);
+
+      writeToFS(CHAT_SESSION_PATH, log);
       peer.send(log); //Send the client submitted message to the peer
       event.reply("i_submitted_message", log); //Send the message back to the renderer process
     });
@@ -258,7 +307,7 @@ function connect(
     const receivedLog = data.toString("utf8");
     console.log(name + ">", data.toString("utf8"));
     //Received message from peer, write this to the local fs
-    const chatSessionPath = await buildChatDir(identity, name);
+    const chatSessionPath = await buildChatDir(identity, name); //TODO: refactor this...
     writeToFS(chatSessionPath, receivedLog);
     window.webContents.send("peer_submitted_message", receivedLog);
   });
@@ -468,8 +517,6 @@ const createWindow = (): BrowserWindow => {
   return mainWindow;
 };
 
-//GLOBAL VARS TO TEST
-let GLOBAL_USER_NAME: string;
 //  This begins the webRTC connection process
 async function establishConnection(
   window: BrowserWindow,
@@ -542,6 +589,13 @@ async function registerListeners(window: BrowserWindow) {
   ipcMain.on("send_peer_metadata", (_, message) => {
     console.log(message);
     establishConnection(window, message);
+  });
+
+  ipcMain.on("get_friend_chat_object", async (event, message) => {
+    console.log("Request for getting friend chat object registered" + message);
+    const chatObject = await getFriendChatObject(window, message);
+
+    event.reply("friend_chat_object_sent", chatObject);
   });
 }
 
@@ -622,9 +676,6 @@ async function handleInviteLink(url: string, window: BrowserWindow) {
 // Some APIs can only be used after this event occurs.
 
 //Make window a global variable accessible across
-
-//Declaring global variables to be used across the application
-let window: BrowserWindow = null; //TODO: declare this type correctly for TS
 
 app
   .on("ready", () => {

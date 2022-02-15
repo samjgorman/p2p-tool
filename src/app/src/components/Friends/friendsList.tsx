@@ -8,12 +8,20 @@ type FriendMetadata = {
 
 function FriendObject(props){
 
+  function handleFriend(friend:string){
+    //TODO: Request the local chat file for this friend and render it
+    // const friendName = friend[0].toString()
+    window.Main.getFriendChatObject(friend) //TODO: verify this
+
+  }
+
   const lastSeenTimestamp:number = parseInt(props.lastSeen)
   const readableLastSeen = new Date(lastSeenTimestamp).toLocaleTimeString("en-US")
   //TODO: If empty, state that user is offline
 
     return (
-      <div className="FriendobjectContainer"> 
+      <div className="FriendobjectContainer" onClick={()=> handleFriend(props.name)}
+> 
         <div className="FriendObject">{props.name}</div>
         <div className="FriendObject">{props.lastSeen === "" ? "Offline" : readableLastSeen}</div> 
         </div>
@@ -33,8 +41,6 @@ function FriendObject(props){
 
  function FriendsList(props) { //refactor for TS 
     const [friends, setFriends] = useState([]);
-    const [time, setTime] = useState(Date.now());
-
     const [friendsPopulated, setFriendsPopulated] = useState(false);
 
     function convertRecordToArray(friends: Record<string, FriendMetadata>):Array<Array<string>>{
