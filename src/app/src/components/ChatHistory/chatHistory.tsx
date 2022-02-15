@@ -30,7 +30,6 @@ function ChatHistory(props) { //refactor for TS
             chatMessage={chatMessage.message}
             timestamp={chatMessage.timestamp}
             sender= {chatMessage.sender}
-
            />
          ))
         }

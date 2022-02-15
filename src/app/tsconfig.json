@@ -15,5 +15,5 @@
       "*": ["node_modules/*"]
     }
   },
-  "include": ["src/**/*", "electron", "main.ts", "bridge.ts"]
+  "include": ["src/**/*", "electron", "main.ts", "bridge.ts", "test"]
 }

@@ -15,10 +15,12 @@ var react_1 = __importDefault(require("react"));
  *          seconds - time posted in UNIX timestamp seconds
  */
 function ChatMessage(props) {
+    var readableTimestamp = new Date(props.timestamp).toLocaleTimeString("en-US");
     return (react_1["default"].createElement("div", { className: "LiveChatMessage" },
-        react_1["default"].createElement("h4", { className: "message-owner" }, props.liveChatMessage.username),
+        react_1["default"].createElement("h4", { className: "message-owner" }, props.sender),
         react_1["default"].createElement("div", { className: "UserAndText" },
-            react_1["default"].createElement("p", { className: "message-text" }, props.text))));
+            react_1["default"].createElement("p", { className: "message-text" }, props.chatMessage),
+            react_1["default"].createElement("p", { className: "message-time" }, readableTimestamp))));
 }
 exports["default"] = ChatMessage;
 //# sourceMappingURL=message.js.map

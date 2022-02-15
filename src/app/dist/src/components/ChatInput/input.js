@@ -42,19 +42,12 @@ exports.__esModule = true;
 var react_1 = __importDefault(require("react"));
 function handleMessage(event) {
     return __awaiter(this, void 0, void 0, function () {
-        var timestamp, raw_message, raw_payload, payload;
+        var raw_message, payload;
         return __generator(this, function (_a) {
             event.preventDefault();
-            timestamp = new Date();
             raw_message = event.target;
-            console.log("Message sent at " + timestamp);
-            raw_payload = {
-                message: raw_message[0].value,
-                timestamp: Date.now(),
-                user: "Sam" //Temp value
-            };
-            payload = JSON.stringify(raw_payload);
-            window.Main.submitMessageToPeer(payload);
+            payload = raw_message[0].value;
+            window.Main.sendMessageToPeer(payload);
             return [2 /*return*/];
         });
     });
@@ -67,7 +60,6 @@ function handleMessage(event) {
 **/
 function Chat() {
     return (react_1["default"].createElement("div", { className: "LiveChatMessageForm" },
-        react_1["default"].createElement("div", null, "Send a chat message"),
         react_1["default"].createElement("form", { className: "liveChat-message-form", noValidate: true, autoComplete: "off", onSubmit: function (event) {
                 return handleMessage(event);
             } },

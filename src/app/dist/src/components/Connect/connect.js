@@ -60,6 +60,7 @@ function handleConnectInfo(event) {
     return __awaiter(this, void 0, void 0, function () {
         var initiatorString, initiator, data, recipient, invitedBy, inviteToken, rawPeerMetadata, peerMetadata;
         return __generator(this, function (_a) {
+            event.preventDefault(); //test
             console.log(event.target[0].value);
             console.log(event.target[1].value);
             initiatorString = event.target[1].value;
@@ -85,7 +86,7 @@ function handleConnectInfo(event) {
                 data: data
             };
             peerMetadata = JSON.stringify(rawPeerMetadata);
-            window.Main.passPeerMetadata(peerMetadata);
+            window.Main.sendPeerMetadata(peerMetadata);
             return [2 /*return*/];
         });
     });
@@ -98,11 +99,12 @@ function handleConnectInfo(event) {
 **/
 function Connect() {
     var _a = (0, react_1.useState)(false), initiator = _a[0], setInitiator = _a[1];
-    var _b = (0, react_1.useState)(0), token = _b[0], setToken = _b[1];
+    var _b = (0, react_1.useState)(""), invite = _b[0], setInvite = _b[1];
+    var _c = (0, react_1.useState)(false), inviteLoaded = _c[0], setInviteLoaded = _c[1];
     function handleChoice(val) {
         if (val === "send") {
             setInitiator(true);
-            window.Main.sendInviteToken("Requested token");
+            // window.Main.sendInviteToken("Requested token");
         }
         if (val === "accept") {
             setInitiator(false);
@@ -111,12 +113,14 @@ function Connect() {
     (0, react_1.useEffect)(function () {
         // Listen for the event
         //Find way to listen for API
-        window.Main.on("generate_token", function (event, val) {
-            setToken(val);
-            console.log(val);
+        window.Main.on("send_invite_link", function (event, message) {
+            console.log("Received invite link");
+            setInvite(event);
+            console.log(event);
+            setInviteLoaded(true);
             //Finish this
         });
-    }, []);
+    });
     return (react_1["default"].createElement("div", { className: "LiveChatMessageForm" },
         react_1["default"].createElement("form", { className: "liveChat-message-form", autoComplete: "off", onSubmit: function (event) {
                 return handleConnectInfo(event);
@@ -134,10 +138,10 @@ function Connect() {
                     react_1["default"].createElement("input", { className: "ninitiator-field", placeholder: "Who are you accepting this invite from?", required: true }),
                     react_1["default"].createElement("input", { className: "token-field", placeholder: "What's the invite token?", required: true })),
             react_1["default"].createElement("input", { className: "submit-connection-button", type: "submit", value: "Send" })),
-        initiator &&
+        inviteLoaded &&
             react_1["default"].createElement("div", null,
-                "Send this payload: ",
-                token,
+                "Send this invite link: ",
+                invite,
                 " ")));
 }
 exports["default"] = Connect;
