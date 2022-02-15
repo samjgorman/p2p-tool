@@ -1,5 +1,5 @@
 
-import { Container, Image, Text,Sidebar,Main } from './styles'
+import { Container, Text,Sidebar,Main } from './styles'
 import Chat from '../Chat/chat'
 import Connect from '../Connect/connect'
 import FriendsList from '../Friends/friendsList'

@@ -1,13 +1,4 @@
-import styled, { keyframes } from "styled-components";
-
-const rotate = keyframes`
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-`;
+import styled from "styled-components";
 
 export const Container = styled.div`
   display: flex;
@@ -25,11 +16,6 @@ export const Sidebar = styled.div`
 
 export const Main = styled.div`
   flex-direction: column;
-`;
-
-export const Image = styled.img`
-  width: 240px;
-  animation: ${rotate} 15s linear infinite;
 `;
 
 export const Text = styled.p`

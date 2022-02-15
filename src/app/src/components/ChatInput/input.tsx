@@ -1,5 +1,5 @@
 import React from 'react';
-import { ReactNode, ButtonHTMLAttributes } from 'react'
+import { ButtonHTMLAttributes } from 'react'
 
 
 async function handleMessage(event: React.FormEvent<HTMLFormElement>) {
@@ -20,7 +20,6 @@ function Chat() {
 
     return (
         <div className="LiveChatMessageForm">
-            <div>Send a chat message</div>
           <form
             className="liveChat-message-form"
             noValidate

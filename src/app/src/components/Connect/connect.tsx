@@ -47,7 +47,9 @@ async function handleConnectInfo(event:React.FormEvent<HTMLFormElement>){
 function Connect() {
 
   const [initiator, setInitiator] = useState(false);
-  const [token, setToken] = useState("");
+  const [invite, setInvite] = useState("");
+  const [inviteLoaded, setInviteLoaded] = useState(false);
+
 
 
   function handleChoice(val:string){
@@ -66,8 +68,9 @@ function Connect() {
     //Find way to listen for API
     window.Main.on("send_invite_link", (event, message) => {
       console.log("Received invite link")
-      setToken(event);
+      setInvite(event);
       console.log(event)
+      setInviteLoaded(true)
       //Finish this
     });
    
@@ -107,8 +110,8 @@ function Connect() {
             <input className="submit-connection-button" type="submit" value="Send" />
           </form>
 
-            {
-          <div>Send this payload: {token} </div>
+            { inviteLoaded && 
+          <div>Send this invite link: {invite} </div>
             }
 
         </div>

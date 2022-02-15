@@ -501,7 +501,7 @@ const createWindow = (): BrowserWindow => {
     width: 1100,
     height: 700,
     // backgroundColor: "#191622",
-    backgroundColor: "white",
+    // backgroundColor: "white",
     webPreferences: {
       nodeIntegration: false, //TODO: refactor to false
       contextIsolation: true, //refactor to true
