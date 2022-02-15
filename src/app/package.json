@@ -1,8 +1,8 @@
 {
-  "name": "my-new-app",
-  "productName": "my-new-app",
+  "name": "P2P-Chat",
+  "productName": "P2P-Chat",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "A peer to peer chat demo.",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",

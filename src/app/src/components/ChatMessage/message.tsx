@@ -1,37 +1,25 @@
-
 import React from "react";
 
 /**
- * This component renders a single message and should be used as a
- * child component to LiveChat.
- * @param props is an object that contains these properties
- *    LiveChatMessage - an object that contains these properties
- *      timestamp - a Date object representing when the message was sent
- *      text - a string containing the message's text
- *      time_posted - an object containing these properties
- *          seconds - time posted in UNIX timestamp seconds
+ * Functional component that renders a chat message
+ * @param props
+ * sender: string, sender of message
+ * chatMessage: string, message contents
+ * timestamp: string, UNIX timestring representing time message sent
  */
+function ChatMessage(props) {
+  const readableTimestamp = new Date(props.timestamp).toLocaleTimeString(
+    "en-US"
+  );
 
- function ChatMessage(props) { //refactor for TS 
-
-  const readableTimestamp = new Date(props.timestamp).toLocaleTimeString("en-US")
-
-
-    return (
-      <div className="LiveChatMessage">
-          
-            <h4 className="message-owner">{props.sender}</h4>
-            <div className="UserAndText">
-              <p className="message-text">
-                {props.chatMessage}
-              </p>
-              <p className="message-time">
-                {readableTimestamp}
-                {/* {timeSince(props.liveChatMessage.time_sent.seconds)} */}
-              </p>
-            </div>
-
+  return (
+    <div className="ChatMessage">
+      <h4 className="ChatMessageSender">{props.sender}</h4>
+      <div className="ChatMessageMessageTime">
+        <p className="ChatMessageMessage">{props.chatMessage}</p>
+        <p className="ChatMessageTime">{readableTimestamp}</p>
       </div>
-    );
-  }
-  export default ChatMessage;
+    </div>
+  );
+}
+export default ChatMessage;

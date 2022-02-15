@@ -198,6 +198,7 @@ function formatMessageToStringifiedLog(
     timestamp: Date.now(),
     sender: identity,
     message: message, //Check this
+    //TODO: write a last_synced or delivered property
   };
   const stringified_log = JSON.stringify(log);
   return stringified_log;
@@ -358,6 +359,7 @@ async function initiateHandshake(
   //TEST: check if peer online
   const isPeerOnline = await isRemotePeerOnline(name, recipient);
   console.log("Res says" + isPeerOnline);
+  //IF the peer is offline, write offline messages to chat log
   const password = randomBytes(32);
   const inviteLink = generateInviteLink(password, name, me, window);
 
@@ -600,6 +602,19 @@ async function registerListeners(window: BrowserWindow) {
     const chatObject = await getFriendChatObject(window, message);
 
     event.reply("friend_chat_object_sent", chatObject);
+  });
+
+  //Listen for offline messages
+  ipcMain.on("send_message_to_peer", async (event, message) => {
+    console.log("Listener for writing new data offline fired");
+    // console.log(message); //Message submitted by client
+    // const log = formatMessageToStringifiedLog(identity, message); //Check this
+    // // const chatSessionPath = await buildChatDir(identity, name);
+    // CHAT_SESSION_PATH = await buildChatDir(identity, name);
+
+    // writeToFS(CHAT_SESSION_PATH, log);
+    // peer.send(log); //Send the client submitted message to the peer
+    // event.reply("i_submitted_message", log); //Send the message back to the renderer process
   });
 }
 

@@ -44,7 +44,6 @@ export async function isRemotePeerOnline(
   name: string,
   friend: string
 ): Promise<boolean> {
-  //TODO: get the last_seen of this friend
   //Compare to the current date
   //TODO: have a "get friends" function
   const identityPath = path.join(__dirname, "../../files", "identities", name);
@@ -65,8 +64,7 @@ export async function isRemotePeerOnline(
       //===
       matchFound = true;
       const lastSeen = friendMetadata.lastSeen;
-      //If the lastSeen timestamp is less than the current date, user is offline
-      //If timestamp is 30 seconds less than the current date
+      //If lastSeen timestamp is 15 seconds less than the current date
       const whenStatusWasLastChecked = Date.now() - 15000;
       if (parseInt(lastSeen) < whenStatusWasLastChecked) {
         return false;
