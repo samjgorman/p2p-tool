@@ -178,7 +178,7 @@ export async function listenForConnectionRequests(
         const friendMetadata = value;
         const publicKey = friendMetadata.publicKey;
 
-        if (message.from == publicKey) {
+        if (message.from === publicKey) {
           //===
           console.log(
             "Match found from " + friendName + " connection listener"

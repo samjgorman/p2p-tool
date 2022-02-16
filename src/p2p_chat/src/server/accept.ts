@@ -27,7 +27,14 @@ import { getPublicKeyId, generateKeys } from "./keyHelpers";
 
 const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 
-//  This function accepts a handshake to connect to a peer
+/**
+ * acceptHandshake constructs a password & publicKey, and subscribes & listens for
+ * an invitation to signal on a signalhub channel of its encrypted public key.  If an invitation is found
+ * ,it broadcasts a response on a signalhub channel of the encrypted public key sent in the invite.
+ * If an invite-ack is received by the peer, the function writes the peer's public key and name to the
+ * user's friends.json, then attempts to connect over WebRTC in connect().
+ *
+ */
 export async function acceptHandshake(
   me: Keys,
   name: string,
@@ -90,14 +97,10 @@ export async function acceptHandshake(
 
   const friendMetadata: FriendMetadata = { publicKey: "", lastSeen: "" };
   friendMetadata.publicKey = publicKey.toString("base64");
-  console.log("Friend md in initiate" + friendMetadata.publicKey);
-
   friends[invitedBy] = friendMetadata;
   await fs.writeJSON(friendsPath, friends);
 
   //Package and send a list of the user's friends
   window.webContents.send("get_all_friends_of_user", friends);
-
-  //Now that encryption matches, attempt to connect
   connect(me, name, invitedBy, initiator, friends, window);
 }

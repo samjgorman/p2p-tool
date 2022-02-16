@@ -33,11 +33,11 @@ import { formatMessageToStringifiedLog } from "./formatHelpers";
 const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 // global.hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 console.log(typeof hub);
+
 /**
- * Connect
- * @param identity  -> String identity of the sender of the message
- * @param name  -> String Name of the recipient of the message
- * @param initiator -> Bool representing if initiator of the wrtc connection
+ * Connect:
+ *
+ *
  */
 export function connect(
   me: Keys,
@@ -135,7 +135,7 @@ export function connect(
     const receivedLog = data.toString("utf8");
     console.log(name + ">", data.toString("utf8"));
     //Received message from peer, write this to the local fs
-    const chatSessionPath = await buildChatDir(identity, name); //TODO: refactor this...
+    const chatSessionPath = await buildChatDir(identity, name);
     writeToFS(chatSessionPath, receivedLog);
     window.webContents.send("peer_submitted_message", receivedLog);
   });

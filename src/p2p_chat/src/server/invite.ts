@@ -33,9 +33,17 @@ import { getPublicKeyId, generateKeys } from "./keyHelpers";
 
 const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 
-//  This function initiates a handshake to connect to a peer
+/**
+ * initiateHandshake constructs a protocol URL inviteLink, broadcasts an invite
+ * on a signalhub channel of its encrypted public key, then listens for
+ * a response on this channel generated in acceptHandshake().  It then unseals the encrypted response, and validates
+ * whether the response matches the encrypted password it sent in its invite.
+ * If successful, the function sends an invite-ack to the peer. It then writes the
+ * peer's public key and name to the user's friends.json,
+ * then attempts to connect over WebRTC in connect().
+ */
 export async function initiateHandshake(
-  me: Keys, //TODO: better way to pass around keys
+  me: Keys,
   name: string,
   initiator: boolean,
   recipient: string,
@@ -43,10 +51,8 @@ export async function initiateHandshake(
   friendsPath: string,
   window: BrowserWindow
 ) {
-  //TEST: check if peer online
   const isPeerOnline = await isRemotePeerOnline(name, recipient);
-  console.log("Res says" + isPeerOnline);
-  //IF the peer is offline, write offline messages to chat log
+  console.log("Res says" + isPeerOnline); //IF the peer is offline, write offline messages to chat log
   const password = randomBytes(32);
   const inviteLink = generateInviteLink(password, name, me, window);
 
@@ -95,11 +101,8 @@ export async function initiateHandshake(
   };
   hub.broadcast(getPublicKeyId(publicKey), channelMessage);
 
-  // friends[recipient] = publicKey.toString("base64"); //this should be recipient?
-  // let friendMetadata: FriendMetadata;
   const friendMetadata: FriendMetadata = { publicKey: "", lastSeen: "" };
   friendMetadata.publicKey = publicKey.toString("base64");
-  console.log("Friend md in initiate" + friendMetadata.publicKey);
   friends[recipient] = friendMetadata;
 
   await fs.writeJSON(friendsPath, friends);
@@ -107,6 +110,5 @@ export async function initiateHandshake(
   //Package and send a list of the user's friends
   window.webContents.send("get_all_friends_of_user", friends);
 
-  //Now that encryption matches, attempt to connect
   connect(me, name, recipient, initiator, friends, window);
 }

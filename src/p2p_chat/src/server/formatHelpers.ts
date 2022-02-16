@@ -1,3 +1,11 @@
+/**
+ * formatMessageToStringifiedLog is a helper function that formats
+ * a peerMetadata message into a stringified log suitable to be written
+ * to the filesystem.
+ * @param identity
+ * @param message
+ * @returns
+ */
 export function formatMessageToStringifiedLog(
   identity: string,
   message: string

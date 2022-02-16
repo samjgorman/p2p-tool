@@ -1,15 +1,12 @@
 import { contextBridge, ipcRenderer } from "electron";
-// const fs = require('fs-extra')
 
+/**
+ * Here, functions are exposed to the renderer process
+ * via a contextBridge so they can interact with the
+ * main (electron) side without security problems.
+ * The function below can accessed using `window.Main.writeToFS`
+ */
 export const api = {
-  /**
-   * Here you can expose functions to the renderer process
-   * so they can interact with the main (electron) side
-   * without security problems.
-   *
-   * The function below can accessed using `window.Main.writeToFS`
-   */
-
   ifConnectionConfirmed: (message: boolean) => {
     ipcRenderer.send("if_connection_confirmed", message);
   },
@@ -30,10 +27,6 @@ export const api = {
     ipcRenderer.send("get_friend_chat_object", friend);
   },
 
-  // getAllFriendsOfUser: (placeholder: string) => {
-  //   ipcRenderer.send("get_all_friends_of_user", placeholder);
-  // },
-
   /**
    * Provide an easier way to listen to events
    */
@@ -42,7 +35,6 @@ export const api = {
   },
 
   //Unsubsribe from a channel
-
   removeAllListeners: (channel: string) => {
     ipcRenderer.removeAllListeners(channel);
   },
