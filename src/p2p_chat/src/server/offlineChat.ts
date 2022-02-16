@@ -8,10 +8,11 @@ import { Keys, FriendMetadata } from "../shared/@types/types";
 import * as path from "path";
 
 /**
- *
+ * getFriendChatObject is a function that gets the chat history between a peer and remotePeer.
+ * It constructs an array of objects from a Record<string, peerMetadata> to make rendering on the client simpler.
  * @param window
  * @param message
- * @returns
+ * @returns chatHistoryObject: Array<object>>
  */
 export async function getFriendChatObject(
   window: BrowserWindow,
@@ -32,7 +33,6 @@ export async function getFriendChatObject(
       // Note: we use the crlfDelay option to recognize all instances of CR LF
       // ('\r\n') in the file as a single line break.
       for await (const line of rl) {
-        // Each line in input.txt will be successively available here as `line`.
         const lineObject = JSON.parse(line);
         chatHistoryObject.push(lineObject);
       }
@@ -46,9 +46,10 @@ export async function getFriendChatObject(
 }
 
 /**
- *
- * @param name
- * @returns
+ * getAllFriends is a helper function that returns a peer's friend file in the form of a
+ * Record<string, FriendMetadata>>.
+ * @param name: the peer's name
+ * @returns friends: Record<string, FriendMetadata>>
  */
 export async function getAllFriends(
   name: string
@@ -64,9 +65,9 @@ export async function getAllFriends(
 }
 
 /**
- *
+ * getFriendsPath is a helper function that returns the path to a peer's friends file.
  * @param name
- * @returns
+ * @returns friendsPath: string
  */
 export async function getFriendsPath(name: string): Promise<string> {
   const identityPath = path.join(__dirname, "../../files", "identities", name);

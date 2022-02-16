@@ -5,27 +5,16 @@ import wrtc from "wrtc";
 import fs from "fs-extra";
 import * as path from "path";
 import readline from "readline";
-import {
-  createKeys,
-  randomBytes,
-  createHash,
-  box,
-  seal,
-  sealOpen,
-  boxOpen,
-} from "./crypto";
+import { box, boxOpen } from "./crypto";
 import "dotenv/config";
 import {
   Keys,
   FriendMetadata,
   PublicChannelMessage,
   PublicChannelMessagePayload,
-  InviteResponseMessage,
-  InviteAckMessage,
   PeerSignal,
 } from "../shared/@types/types";
 
-import { generateInviteLink, handleInviteLink } from "./linkHelpers";
 import { writeToFS, buildChatDir } from "./fileHelpers";
 import { getPublicKeyId, generateKeys } from "./keyHelpers";
 import { formatMessageToStringifiedLog } from "./formatHelpers";
@@ -35,9 +24,31 @@ const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 console.log(typeof hub);
 
 /**
- * Connect:
+ * Connect retrieves the publicKey of the remotePeer, then creates a
+ * webRTC peer connection object via simple-peer.
  *
+ * Depending on the value of the initiatior boolean param, this peer will be an
+ * initiator or non-initiator.
  *
+ * If the peer is an initiator:
+ * The peer's event listener on("signal") will fire immediately.
+ * This signal is encrypted then sent over a SignalHub channel of the remotePeer's publicKey.
+ *
+ * Then, the peer subscribes to a signalhub channel of its own publicKey, and listens for data with stream.on('data')
+ * Upon a valid response from the remotePeer, the peer signals back to the remotePeer via a signalhub channel of the remote
+ * publicKey.
+ *
+ * If the peer is a non-initiator:
+ *
+ * The peer subscribes to a signalhub channel of its own publicKey, and listens for data with stream.on('data')
+ * Upon a valid response from the remotePeer, the peer signals back to the remotePeer via a signalhub channel of the remote
+ * publicKey.
+ *
+ * In both cases:
+ *
+ * The peer listens for a successful connection state, and if successful, for data received by the remotePeer.
+ * Messages sent to and received by the remotePeer are formatted and written to the local filesystem in the chats directory.
+ * Messages are then passed to the client via IPC to be rendered.
  */
 export function connect(
   me: Keys,
@@ -118,10 +129,8 @@ export function connect(
 
   peer.on("connect", async () => {
     console.log("Connected!");
-    //TODO: Update the last connected key...
     ipcMain.on("send_message_to_peer", async (event, message) => {
       console.log("Listener for writing new data fired");
-      console.log(message); //Message submitted by client
       const log = formatMessageToStringifiedLog(identity, message); //Check this
       const chatSessionPath = await buildChatDir(identity, name);
       writeToFS(chatSessionPath, log);
@@ -133,7 +142,6 @@ export function connect(
   //Received new message from sending peer
   peer.on("data", async (data) => {
     const receivedLog = data.toString("utf8");
-    console.log(name + ">", data.toString("utf8"));
     //Received message from peer, write this to the local fs
     const chatSessionPath = await buildChatDir(identity, name);
     writeToFS(chatSessionPath, receivedLog);
