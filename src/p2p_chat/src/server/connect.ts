@@ -31,10 +31,10 @@ import {
   PeerSignal,
 } from "../shared/@types/types";
 
-
 import { generateInviteLink, handleInviteLink } from "./linkHelpers";
 import { writeToFS, buildChatDir } from "./fileHelpers";
 import { getPublicKeyId, generateKeys } from "./keyHelpers";
+import { formatMessageToStringifiedLog } from "./formatHelpers";
 
 const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 // global.hub = signalhub("p2p-tool", ["http://localhost:8080/"]);

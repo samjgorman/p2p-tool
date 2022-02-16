@@ -1,10 +1,6 @@
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
-import signalhub from "signalhub";
-import Peer from "simple-peer";
-import wrtc from "wrtc";
 import fs from "fs-extra";
 import * as path from "path";
-import readline from "readline";
 import "dotenv/config";
 import {
   pollIfFriendsOnline,
@@ -12,16 +8,7 @@ import {
   isRemotePeerOnline,
 } from "./onlineOffline";
 
-import {
-  Keys,
-  FriendMetadata,
-  PublicChannelMessage,
-  PublicChannelMessagePayload,
-  InviteResponseMessage,
-  InviteAckMessage,
-  PeerSignal,
-} from "../shared/@types/types";
-
+import { FriendMetadata } from "../shared/@types/types";
 import { initiateHandshake } from "./invite";
 import { acceptHandshake } from "./accept";
 import { generateInviteLink, handleInviteLink } from "./linkHelpers";
@@ -35,9 +22,7 @@ import { getFriendChatObject } from "./offlineChat";
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 
 //Declaring global variables to be used across the application
-let GLOBAL_USER_NAME: string;
 let window: BrowserWindow = null; //TODO: declare this type correctly for TS
-// let CHAT_SESSION_PATH: string = null;
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -53,8 +38,8 @@ const createWindow = (): BrowserWindow => {
     width: 1100,
     height: 700,
     webPreferences: {
-      nodeIntegration: false, //TODO: refactor to false
-      contextIsolation: true, //refactor to true
+      nodeIntegration: false,
+      contextIsolation: true,
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
   });
@@ -68,7 +53,7 @@ const createWindow = (): BrowserWindow => {
   return mainWindow;
 };
 
-//  This begins the webRTC connection process
+//  This begins the webRTCion process
 async function establishConnection(
   window: BrowserWindow,
   peerMetadata: string
@@ -77,7 +62,7 @@ async function establishConnection(
   const peerMetadataObj = JSON.parse(peerMetadata);
   const initiator = peerMetadataObj.initiator;
   const name = peerMetadataObj.data.name;
-  GLOBAL_USER_NAME = name;
+  global.userName = name;
 
   //Generate keys
   const mykeys = await generateKeys(name);
@@ -129,13 +114,12 @@ async function establishConnection(
       window
     );
   }
-  //Code doesnt run below
 }
 
+/**
+ * This comes from bridge integration, check bridge.ts
+ */
 async function registerListeners(window: BrowserWindow) {
-  /**
-   * This comes from bridge integration, check bridge.ts
-   */
   ipcMain.on("send_peer_metadata", (_, message) => {
     console.log(message);
     establishConnection(window, message);
@@ -147,19 +131,6 @@ async function registerListeners(window: BrowserWindow) {
 
     event.reply("friend_chat_object_sent", chatObject);
   });
-
-  //Listen for offline messages
-  ipcMain.on("send_message_to_peer", async (event, message) => {
-    console.log("Listener for writing new data offline fired");
-    // console.log(message); //Message submitted by client
-    // const log = formatMessageToStringifiedLog(identity, message); //Check this
-    // // const chatSessionPath = await buildChatDir(identity, name);
-    // CHAT_SESSION_PATH = await buildChatDir(identity, name);
-
-    // writeToFS(CHAT_SESSION_PATH, log);
-    // peer.send(log); //Send the client submitted message to the peer
-    // event.reply("i_submitted_message", log); //Send the message back to the renderer process
-  });
 }
 
 async function registerProtocols() {
@@ -168,8 +139,6 @@ async function registerProtocols() {
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-
 app
   .on("ready", () => {
     window = createWindow();
@@ -186,7 +155,6 @@ app
       dialog.showErrorBox("Welcome Back", `You arrived from: ${url}`);
     });
   })
-
   .catch((e) => console.error(e)); //TODO: check this code
 
 // Quit when all windows are closed, except on macOS. There, it's common

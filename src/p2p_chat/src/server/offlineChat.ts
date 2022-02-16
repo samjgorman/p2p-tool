@@ -13,9 +13,9 @@ export async function getFriendChatObject(
   const chatHistoryObject: Array<object> = [];
   console.log("Friend name in main" + friendName);
   //TODO: retrieve json chat, stringify, and send
-  if (GLOBAL_USER_NAME !== null) {
+  if (global.userName !== null) {
     // const candidateChatPath = GLOBAL_USER_NAME + "_" + friendName + ".json";
-    const candidateChatPath = await buildChatDir(GLOBAL_USER_NAME, friendName);
+    const candidateChatPath = await buildChatDir(global.userName, friendName);
     console.log("Candidate chat path is " + candidateChatPath);
     if (await fs.pathExists(candidateChatPath)) {
       // const chatHistoryObject = await fs.readJSON(candidateChatPath);

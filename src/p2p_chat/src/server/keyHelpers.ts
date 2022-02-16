@@ -7,15 +7,7 @@ import {
   sealOpen,
   boxOpen,
 } from "./crypto";
-import {
-  Keys,
-  FriendMetadata,
-  PublicChannelMessage,
-  PublicChannelMessagePayload,
-  InviteResponseMessage,
-  InviteAckMessage,
-  PeerSignal,
-} from "../shared/@types/types";
+import { Keys } from "../shared/@types/types";
 import * as path from "path";
 import fs from "fs-extra";
 

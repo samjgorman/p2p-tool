@@ -13,7 +13,6 @@ import { acceptHandshake } from "./accept";
 
 import * as path from "path";
 import fs from "fs-extra";
-v;
 export function generateInviteLink(
   password: Buffer,
   name: string,
@@ -66,7 +65,7 @@ export async function handleInviteLink(url: string, window: BrowserWindow) {
       if (connectionConfirmed) {
         //Accept a connection...
         //Generate keys
-        const mykeys = await generateKeys(GLOBAL_USER_NAME);
+        const mykeys = await generateKeys(global.userName);
         //TODO: refactor
         const identityPath = path.join(
           __dirname,
@@ -85,7 +84,7 @@ export async function handleInviteLink(url: string, window: BrowserWindow) {
         const initiator = false;
         acceptHandshake(
           mykeys,
-          GLOBAL_USER_NAME,
+          global.userName,
           initiator,
           nameParam,
           inviteParam,
