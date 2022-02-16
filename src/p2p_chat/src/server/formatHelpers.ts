@@ -5,7 +5,7 @@ export function formatMessageToStringifiedLog(
   const log = {
     timestamp: Date.now(),
     sender: identity,
-    message: message, //Check this
+    message: message,
     //TODO: write a last_synced or delivered property
   };
   const stringified_log = JSON.stringify(log);

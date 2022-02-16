@@ -28,7 +28,6 @@ import {
   PeerSignal,
 } from "../shared/@types/types";
 import signalhub from "signalhub";
-
 import { generateInviteLink, handleInviteLink } from "./linkHelpers";
 import { getPublicKeyId, generateKeys } from "./keyHelpers";
 

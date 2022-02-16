@@ -16,12 +16,6 @@ import {
 } from "./crypto";
 import "dotenv/config";
 import {
-  pollIfFriendsOnline,
-  listenForConnectionRequests,
-  isRemotePeerOnline,
-} from "./onlineOffline";
-
-import {
   Keys,
   FriendMetadata,
   PublicChannelMessage,
@@ -130,8 +124,6 @@ export function connect(
       console.log(message); //Message submitted by client
       const log = formatMessageToStringifiedLog(identity, message); //Check this
       const chatSessionPath = await buildChatDir(identity, name);
-      //   CHAT_SESSION_PATH = await buildChatDir(identity, name);
-
       writeToFS(chatSessionPath, log);
       peer.send(log); //Send the client submitted message to the peer
       event.reply("i_submitted_message", log); //Send the message back to the renderer process

@@ -13,12 +13,6 @@ import {
 } from "./crypto";
 import "dotenv/config";
 import {
-  pollIfFriendsOnline,
-  listenForConnectionRequests,
-  isRemotePeerOnline,
-} from "./onlineOffline";
-
-import {
   Keys,
   FriendMetadata,
   PublicChannelMessage,

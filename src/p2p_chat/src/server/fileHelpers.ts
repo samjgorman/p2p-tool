@@ -8,13 +8,6 @@ export async function writeToFS(fileNamePath: string, message: string) {
       if (err) {
         console.error("Error appending to file" + err);
       }
-      // } else {
-      //   // Get the file contents after the append operation
-      //   console.log(
-      //     '\nFile Contents of file after append:',
-      //     fs.readFileSync('test.txt', 'utf8')
-      //   )
-      // }
     });
   } else {
     console.error("Message to write to fs is empty ");
@@ -28,9 +21,7 @@ export async function buildChatDir(
   const dirName = identity + "_" + name;
   const chatPath = path.join(__dirname, "../../files", "chats", dirName);
   await fs.mkdirp(chatPath);
-
   const fileName = identity + "_" + name + ".json";
-
   const chatSessionPath = path.join(chatPath, fileName);
 
   //If file has not already been created, create it
