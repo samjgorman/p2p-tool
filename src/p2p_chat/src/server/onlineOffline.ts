@@ -3,39 +3,15 @@ import fs from "fs-extra";
 import * as path from "path";
 import signalhub from "signalhub";
 
-type PublicChannelMessage =
-  | { type: "seal"; payload: string }
-  | { type: "box"; from: string; payload: string }
-  | { type: "syn"; from: string; payload: string }
-  | { type: "syn-ack"; from: string; payload: string };
-
-type PublicChannelMessagePayload =
-  | InviteResponseMessage
-  | InviteAckMessage
-  | PeerSignal;
-
-type InviteResponseMessage = {
-  type: "invite";
-  password: string;
-  publicKey: string;
-};
-
-type InviteAckMessage = { type: "invite-ack" };
-
-type PeerSignal = {
-  type: "signal";
-  data: any;
-};
-
-type Keys = {
-  publicKey: Buffer;
-  secretKey: Buffer;
-};
-
-type FriendMetadata = {
-  publicKey: string;
-  lastSeen: string;
-};
+import {
+  Keys,
+  FriendMetadata,
+  PublicChannelMessage,
+  PublicChannelMessagePayload,
+  InviteResponseMessage,
+  InviteAckMessage,
+  PeerSignal,
+} from "../shared/@types/types";
 
 const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 
