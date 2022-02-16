@@ -1,9 +1,5 @@
 import React, { useEffect, useState } from "react";
-
-type FriendMetadata = {
-  publicKey: string;
-  lastSeen: string;
-};
+import { FriendMetadata } from "../../../shared/@types/types";
 
 /**
  * Simple functional component to render a friend object,

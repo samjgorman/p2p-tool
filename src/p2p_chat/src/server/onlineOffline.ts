@@ -3,61 +3,40 @@ import fs from "fs-extra";
 import * as path from "path";
 import signalhub from "signalhub";
 
-type PublicChannelMessage =
-  | { type: "seal"; payload: string }
-  | { type: "box"; from: string; payload: string }
-  | { type: "syn"; from: string; payload: string }
-  | { type: "syn-ack"; from: string; payload: string };
-
-type PublicChannelMessagePayload =
-  | InviteResponseMessage
-  | InviteAckMessage
-  | PeerSignal;
-
-type InviteResponseMessage = {
-  type: "invite";
-  password: string;
-  publicKey: string;
-};
-
-type InviteAckMessage = { type: "invite-ack" };
-
-type PeerSignal = {
-  type: "signal";
-  data: any;
-};
-
-type Keys = {
-  publicKey: Buffer;
-  secretKey: Buffer;
-};
-
-type FriendMetadata = {
-  publicKey: string;
-  lastSeen: string;
-};
+import {
+  Keys,
+  FriendMetadata,
+  PublicChannelMessage,
+  PublicChannelMessagePayload,
+  InviteResponseMessage,
+  InviteAckMessage,
+  PeerSignal,
+} from "../shared/@types/types";
+import {
+  getAllFriends,
+  getFriendChatObject,
+  getFriendsPath,
+} from "./offlineChat";
 
 const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 
-//Util to determine if peer
+/**
+ * isRemotePeerOnline is a helper function that determines whether a remotePeer is currently online.
+ * It accesses the lastSeen property of the given remotePeer in the user's friends file,
+ * and if this lastSeen is greater than 15s less than the current date, returns false. Otherwise returns true.
+ * @param name
+ * @param friend
+ * @returns
+ */
 export async function isRemotePeerOnline(
   name: string,
   friend: string
 ): Promise<boolean> {
-  //Compare to the current date
-  //TODO: have a "get friends" function
-  const identityPath = path.join(__dirname, "../../files", "identities", name);
-  const friendsPath = path.join(identityPath, "friends.json");
-  let friends: Record<string, FriendMetadata> = {}; //may need an array
-  if (await fs.pathExists(friendsPath)) {
-    friends = await fs.readJSON(friendsPath);
-  }
-
+  const friends = await getAllFriends(name);
   let matchFound = false;
-  const friendsKeyValuePairs = Object.entries(friends); //get key value pairs
+  const friendsKeyValuePairs = Object.entries(friends);
   for (const [key, value] of friendsKeyValuePairs) {
     const friendName = key;
-    // const publicKey = value;
     const friendMetadata = value;
 
     if (friendName == friend) {
@@ -77,53 +56,51 @@ export async function isRemotePeerOnline(
   return false;
 }
 
+/**
+ * updateLastSeen updates the lastSeen property of the specified friendName in a user's friends file
+ * then sends the updated friends object via IPC to the client
+ * @param name
+ * @param friendName
+ * @param window
+ */
 export async function updateLastSeen(
   name: string,
   friendName: string,
   window: BrowserWindow
 ) {
-  //TODO: write this last_seen to file...
-  const identityPath = path.join(__dirname, "../../files", "identities", name);
-  const friendsPath = path.join(identityPath, "friends.json");
-  let friends: Record<string, FriendMetadata> = {}; //may need an array
+  const friendsPath = await getFriendsPath(name);
+  const friends = await getAllFriends(name);
 
-  if (await fs.pathExists(friendsPath)) {
-    friends = await fs.readJSON(friendsPath);
-  }
-  // const friendMetadata: FriendMetadata = friends[friendName];
-  friends[friendName].lastSeen = Date.now().toString();
-
+  friends[friendName].lastSeen = Date.now().toString(); //Writing lastSeen to friends
   await fs.writeJSON(friendsPath, friends);
 
   window.webContents.send("get_all_friends_of_user", friends);
 }
 
+/**
+ * pollIfFriendsOnline polls if a peer's friends are online. Will be rewritten so currently not documenting.
+ * @param me
+ * @param name
+ * @param initiator
+ * @param window
+ */
 export async function pollIfFriendsOnline(
   me: Keys,
   name: string,
   initiator: boolean,
   window: BrowserWindow
 ) {
-  //From a user's name, search for their JSON file and read it...
-  const identityPath = path.join(__dirname, "../../files", "identities", name);
-  const friendsPath = path.join(identityPath, "friends.json");
-  let friends: Record<string, FriendMetadata> = {}; //may need an array
-
-  if (await fs.pathExists(friendsPath)) {
-    friends = await fs.readJSON(friendsPath);
-  }
+  const friends = await getAllFriends(name);
   console.log("After retrieving friends...");
   console.log(friends);
 
-  //Now, write the contents of the friends object to the lastSeenFriends
-  const friendsKeyValuePairs = Object.entries(friends); //get key value pairs
+  const friendsKeyValuePairs = Object.entries(friends);
 
   for (const [key, value] of friendsKeyValuePairs) {
     console.log(key + ":" + value);
-    //Given the key and value, attempt to connect to the peer and report its status
     const friendName = key;
     const friendMetadata = value;
-    const publicKey = friendMetadata.publicKey; //Now that encryption matches, attempt to connect to each peer in the list
+    const publicKey = friendMetadata.publicKey;
     console.log("Polling if " + friendName + " is available");
 
     const channelMessage: PublicChannelMessage = {
@@ -140,7 +117,6 @@ export async function pollIfFriendsOnline(
     let ackReceived = false;
     setTimeout(function () {
       if (!ackReceived) {
-        // show notification that event has not been fired
         console.log("Ack not received " + friendName + " is offline");
         stream.destroy();
       }
@@ -151,13 +127,11 @@ export async function pollIfFriendsOnline(
 
       if (message.type === "syn-ack") {
         if (message.from == publicKey) {
-          //===
           console.log(
             "Ack received from remote peer," + friendName + " is online "
           );
           ackReceived = true;
           updateLastSeen(name, friendName, window);
-
           stream.destroy();
         } else {
           console.error("Syn ack received is not from the intended peer");
@@ -169,7 +143,15 @@ export async function pollIfFriendsOnline(
   }
 }
 
-//Listener that opens a peer object with initiator off
+/**
+ * listenForConnectionRequests listens for poll requests whether a peer's friends are online.
+ * Will be rewritten so currently not documenting.
+ * @param me
+ * @param name
+ * @param initiator
+ * @param friends
+ * @param window
+ */
 export async function listenForConnectionRequests(
   me: Keys,
   name: string,
@@ -187,7 +169,6 @@ export async function listenForConnectionRequests(
     payload: JSON.stringify(inviteAck),
   };
 
-  //Subscribe to hub of my own public key
   //TODO: Encrypt this message
   const stream = hub.subscribe(me.publicKey.toString("base64") + "invite"); //Check the iD here
   const friendsKeyValuePairs = Object.entries(friends); //get key value pairs
@@ -198,12 +179,10 @@ export async function listenForConnectionRequests(
       let matchFound = false;
       for (const [key, value] of friendsKeyValuePairs) {
         const friendName = key;
-        // const publicKey = value;
         const friendMetadata = value;
         const publicKey = friendMetadata.publicKey;
 
-        if (message.from == publicKey) {
-          //===
+        if (message.from === publicKey) {
           console.log(
             "Match found from " + friendName + " connection listener"
           );
