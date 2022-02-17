@@ -16,6 +16,7 @@ import {
   getFriendChatObject,
   getFriendsPath,
 } from "./offlineChat";
+import { connect } from "./connect";
 
 const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 
@@ -101,44 +102,18 @@ export async function pollIfFriendsOnline(
     const friendMetadata = value;
     const publicKey = friendMetadata.publicKey;
     console.log("Polling if " + friendName + " is available");
-
-    const channelMessage: PublicChannelMessage = {
-      type: "syn",
-      from: me.publicKey.toString("base64"),
-      payload: "This is a test", //TODO: refactor this...
-    };
-
-    //TODO: Encrypt this message
-    hub.broadcast(publicKey + "invite", channelMessage); //Broadcast to public key of peer we are testing
-    const stream = hub.subscribe(me.publicKey.toString("base64") + "ack"); //Subscribe to your own public key
+    //TODO: make a connection via webRTC
+    const myInitiator = true; //TODO refactor
+    connect(me, name, friendName, myInitiator, friends, window);
 
     //Listen for an ACK for a set period of time
-    let ackReceived = false;
-    setTimeout(function () {
-      if (!ackReceived) {
-        console.log("Ack not received " + friendName + " is offline");
-        stream.destroy();
-      }
-    }, 3000);
-
-    stream.on("data", (message: PublicChannelMessage) => {
-      console.log("Message received back from connection listener");
-
-      if (message.type === "syn-ack") {
-        if (message.from == publicKey) {
-          console.log(
-            "Ack received from remote peer," + friendName + " is online "
-          );
-          ackReceived = true;
-          updateLastSeen(name, friendName, window);
-          stream.destroy();
-        } else {
-          console.error("Syn ack received is not from the intended peer");
-        }
-      } else {
-        console.error("Message type response is not valid");
-      }
-    });
+    // let ackReceived = false;
+    // setTimeout(function () {
+    //   if (!ackReceived) {
+    //     console.log("Ack not received " + friendName + " is offline");
+    //     stream.destroy();
+    //   }
+    // }, 3000);
   }
 }
 
@@ -158,47 +133,14 @@ export async function listenForConnectionRequests(
   friends: Record<string, FriendMetadata>,
   window: BrowserWindow
 ) {
-  const inviteAck: InviteAckMessage = {
-    type: "invite-ack",
-  };
-
-  const channelMessage: PublicChannelMessage = {
-    type: "syn-ack",
-    from: me.publicKey.toString("base64"),
-    payload: JSON.stringify(inviteAck),
-  };
-
-  //TODO: Encrypt this message
-  const stream = hub.subscribe(me.publicKey.toString("base64") + "invite"); //Check the iD here
+  //Create peers to listen for each friend that may attempt to connect to me...
   const friendsKeyValuePairs = Object.entries(friends);
+  for (const [key, value] of friendsKeyValuePairs) {
+    const friendName = key;
+    const friendMetadata = value;
+    const publicKey = friendMetadata.publicKey;
 
-  stream.on("data", (message: PublicChannelMessage) => {
-    console.log("Message received from connection listener");
-    if (message.type === "syn") {
-      let matchFound = false;
-      for (const [key, value] of friendsKeyValuePairs) {
-        const friendName = key;
-        const friendMetadata = value;
-        const publicKey = friendMetadata.publicKey;
-
-        if (message.from === publicKey) {
-          console.log(
-            "Match found from " + friendName + " connection listener"
-          );
-          matchFound = true;
-          //Sent an ACK to the sender's public key
-          hub.broadcast(message.from + "ack", channelMessage);
-          // stream.destroy();
-        }
-      }
-
-      if (!matchFound) {
-        console.error(
-          "message from a person not in the user's friend.json " + message.from
-        );
-      }
-    } else {
-      console.error("wrong public channel message type" + message.type);
-    }
-  });
+    const myInitiator = false; //TODO refactor
+    connect(me, name, friendName, myInitiator, friends, window);
+  }
 }

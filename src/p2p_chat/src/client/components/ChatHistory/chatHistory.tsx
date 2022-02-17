@@ -16,6 +16,11 @@ function ChatHistory() {
       setDataReceived(true);
       setChatObject(event);
     });
+
+    //TODO: cleanup with event listener
+    return function cleanup() {
+      window.Main.removeAllListeners("friend_chat_object_sent");
+    };
   });
 
   return (
