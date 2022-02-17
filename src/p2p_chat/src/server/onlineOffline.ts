@@ -1,6 +1,5 @@
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
 import fs from "fs-extra";
-import * as path from "path";
 import signalhub from "signalhub";
 
 import {
@@ -171,7 +170,7 @@ export async function listenForConnectionRequests(
 
   //TODO: Encrypt this message
   const stream = hub.subscribe(me.publicKey.toString("base64") + "invite"); //Check the iD here
-  const friendsKeyValuePairs = Object.entries(friends); //get key value pairs
+  const friendsKeyValuePairs = Object.entries(friends);
 
   stream.on("data", (message: PublicChannelMessage) => {
     console.log("Message received from connection listener");

@@ -1,6 +1,4 @@
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
-import fs from "fs-extra";
-import * as path from "path";
 import "dotenv/config";
 import {
   pollIfFriendsOnline,
@@ -56,7 +54,11 @@ const createWindow = (): BrowserWindow => {
 };
 
 /**
- *
+ * establishConnection fires in response to the "send_peer_metadata" event listener.
+ * It initiates much of the core functionality of the application. The function generates
+ * keys and a friend file in the identities directory. It polls whether other friends are online,
+ * and listens for connection requests. Depending on whether the user selected initiator or non-initiator,
+ * the function calls initiateHandshake or connectHandshake to begin webRTC signalling.
  * @param window
  * @param peerMetadata
  */

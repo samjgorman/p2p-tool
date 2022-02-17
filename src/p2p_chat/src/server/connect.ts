@@ -2,9 +2,6 @@ import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
 import signalhub from "signalhub";
 import Peer from "simple-peer";
 import wrtc from "wrtc";
-import fs from "fs-extra";
-import * as path from "path";
-import readline from "readline";
 import { box, boxOpen } from "./crypto";
 import "dotenv/config";
 import {

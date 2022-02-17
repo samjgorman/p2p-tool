@@ -2,9 +2,6 @@ import { Keys, FriendMetadata } from "../shared/@types/types";
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
 import { getPublicKeyId, generateKeys } from "./keyHelpers";
 import { acceptHandshake } from "./accept";
-
-import * as path from "path";
-import fs from "fs-extra";
 import { getAllFriends, getFriendsPath } from "./offlineChat";
 
 /**

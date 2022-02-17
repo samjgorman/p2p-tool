@@ -2,15 +2,7 @@ import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
 import signalhub from "signalhub";
 import fs from "fs-extra";
 
-import {
-  createKeys,
-  randomBytes,
-  createHash,
-  box,
-  seal,
-  sealOpen,
-  boxOpen,
-} from "./crypto";
+import { seal, boxOpen } from "./crypto";
 import "dotenv/config";
 import {
   Keys,
@@ -18,12 +10,10 @@ import {
   PublicChannelMessage,
   PublicChannelMessagePayload,
   InviteResponseMessage,
-  InviteAckMessage,
-  PeerSignal,
 } from "../shared/@types/types";
 
 import { connect } from "./connect";
-import { getPublicKeyId, generateKeys } from "./keyHelpers";
+import { getPublicKeyId } from "./keyHelpers";
 
 const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 
