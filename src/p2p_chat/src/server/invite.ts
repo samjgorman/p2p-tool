@@ -1,20 +1,8 @@
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
 import fs from "fs-extra";
-import {
-  createKeys,
-  randomBytes,
-  createHash,
-  box,
-  seal,
-  sealOpen,
-  boxOpen,
-} from "./crypto";
+import { randomBytes, box, sealOpen } from "./crypto";
 import "dotenv/config";
-import {
-  pollIfFriendsOnline,
-  listenForConnectionRequests,
-  isRemotePeerOnline,
-} from "./onlineOffline";
+import { isRemotePeerOnline } from "./onlineOffline";
 
 import { connect } from "./connect";
 

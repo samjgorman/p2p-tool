@@ -2,9 +2,6 @@ import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
 import signalhub from "signalhub";
 import Peer from "simple-peer";
 import wrtc from "wrtc";
-import fs from "fs-extra";
-import * as path from "path";
-import readline from "readline";
 import { box, boxOpen } from "./crypto";
 import "dotenv/config";
 import {
@@ -18,10 +15,70 @@ import {
 import { writeToFS, buildChatDir } from "./fileHelpers";
 import { getPublicKeyId, generateKeys } from "./keyHelpers";
 import { formatMessageToStringifiedLog } from "./formatHelpers";
+import { updateLastSeen } from "./onlineOffline";
 
 const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 // global.hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
-console.log(typeof hub);
+
+/**
+ * constructPeer is a helper function that builds a new peer object
+ * with a configured stun and turn server.
+ * @param initiator
+ * @returns
+ */
+export function constructPeer(initiator: boolean) {
+  const peer = new Peer({
+    initiator,
+    wrtc: wrtc,
+    trickle: false,
+    config: {
+      iceServers: [
+        {
+          urls: "stun:numb.viagenie.ca?transport=tcp", //avoid UDP rules & work around network blocks
+          username: process.env.STUN_TURN_USER,
+          credential: process.env.STUN_TURN_PASS,
+        },
+        {
+          urls: "turn:numb.viagenie.ca?transport=tcp",
+          username: process.env.STUN_TURN_USER,
+          credential: process.env.STUN_TURN_PASS,
+        },
+      ],
+    },
+  });
+  return peer;
+}
+
+/**
+ * handleConnectedState is a helper function that sends message the peer has sent when connected
+ * to the client via IPC.  The message is formatted and written to chats.
+ */
+export async function handlePeerSentData(
+  peer: Peer.Instance,
+  identity: string,
+  name: string,
+  window: BrowserWindow
+) {
+  console.log("Connected! " + identity + " to remote " + name);
+
+  //TODO: write last_seen upon connecting to a peer
+  updateLastSeen(identity, name, window);
+
+  ipcMain.on("send_message_to_peer", async (event, message) => {
+    console.log("Listener for writing new data fired");
+    const log = formatMessageToStringifiedLog(identity, message); //Check this
+    const chatSessionPath = await buildChatDir(identity, name);
+    writeToFS(chatSessionPath, log);
+    peer.send(log); //Send the client submitted message to the peer
+    event.reply("i_submitted_message", log); //Send the message back to the renderer process
+  });
+}
+
+export async function handleRemotePeerSentData(
+  peer: Peer.Instance,
+  identity: string,
+  name: string
+) {}
 
 /**
  * Connect retrieves the publicKey of the remotePeer, then creates a
@@ -62,25 +119,7 @@ export function connect(
   const publicKey = Buffer.from(friends[name].publicKey, "base64");
   console.log("Public key of recipient");
   console.log(friends[name]);
-  const peer = new Peer({
-    initiator,
-    wrtc: wrtc,
-    trickle: false,
-    config: {
-      iceServers: [
-        {
-          urls: "stun:numb.viagenie.ca?transport=tcp", //avoid UDP rules & work around network blocks
-          username: process.env.STUN_TURN_USER,
-          credential: process.env.STUN_TURN_PASS,
-        },
-        {
-          urls: "turn:numb.viagenie.ca?transport=tcp",
-          username: process.env.STUN_TURN_USER,
-          credential: process.env.STUN_TURN_PASS,
-        },
-      ],
-    },
-  });
+  const peer: Peer.Instance = constructPeer(initiator);
   peer._debug = console.log;
 
   peer.on("signal", function (data) {
@@ -128,15 +167,7 @@ export function connect(
   });
 
   peer.on("connect", async () => {
-    console.log("Connected!");
-    ipcMain.on("send_message_to_peer", async (event, message) => {
-      console.log("Listener for writing new data fired");
-      const log = formatMessageToStringifiedLog(identity, message); //Check this
-      const chatSessionPath = await buildChatDir(identity, name);
-      writeToFS(chatSessionPath, log);
-      peer.send(log); //Send the client submitted message to the peer
-      event.reply("i_submitted_message", log); //Send the message back to the renderer process
-    });
+    await handlePeerSentData(peer, identity, name, window);
   });
 
   //Received new message from sending peer

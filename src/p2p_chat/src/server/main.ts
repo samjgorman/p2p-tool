@@ -1,9 +1,7 @@
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
-import fs from "fs-extra";
-import * as path from "path";
 import "dotenv/config";
 import {
-  pollIfFriendsOnline,
+  sendConnectionRequests,
   listenForConnectionRequests,
   isRemotePeerOnline,
 } from "./onlineOffline";
@@ -56,7 +54,11 @@ const createWindow = (): BrowserWindow => {
 };
 
 /**
- *
+ * establishConnection fires in response to the "send_peer_metadata" event listener.
+ * It initiates much of the core functionality of the application. The function generates
+ * keys and a friend file in the identities directory. It polls whether other friends are online,
+ * and listens for connection requests. Depending on whether the user selected initiator or non-initiator,
+ * the function calls initiateHandshake or connectHandshake to begin webRTC signalling.
  * @param window
  * @param peerMetadata
  */
@@ -78,13 +80,12 @@ async function establishConnection(
   console.log("friends");
   console.log(friends);
 
-  //Listen for incoming requests to test availability
+  //Create peer listeners for each friend to connect to me
   listenForConnectionRequests(mykeys, name, initiator, friends, window);
-  const timerId = setInterval(function () {
-    pollIfFriendsOnline(mykeys, name, initiator, window);
-    //Package and send a list of the user's friends
-    window.webContents.send("get_all_friends_of_user", friends);
-  }, 1000 * 15); //Run this code every 15 seconds
+  //Create peers to initiate a connection with each friend
+  sendConnectionRequests(mykeys, name, initiator, window);
+  //Package and send a list of the user's friends
+  window.webContents.send("get_all_friends_of_user", friends);
 
   if (initiator) {
     const recipient = peerMetadataObj.data.recipient;

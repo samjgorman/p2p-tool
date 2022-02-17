@@ -1,7 +1,5 @@
 import readline from "readline";
-import { generateInviteLink, handleInviteLink } from "./linkHelpers";
 import { writeToFS, buildChatDir } from "./fileHelpers";
-import { getPublicKeyId, generateKeys } from "./keyHelpers";
 import fs from "fs-extra";
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
 import { Keys, FriendMetadata } from "../shared/@types/types";

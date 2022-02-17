@@ -1,12 +1,4 @@
-import {
-  createKeys,
-  randomBytes,
-  createHash,
-  box,
-  seal,
-  sealOpen,
-  boxOpen,
-} from "./crypto";
+import { createKeys, createHash } from "./crypto";
 import { Keys } from "../shared/@types/types";
 import * as path from "path";
 import fs from "fs-extra";
@@ -37,11 +29,10 @@ export async function generateKeys(identity: string): Promise<Keys> {
   );
 
   await fs.mkdirp(identityPath);
-
   const publicKeyPath = path.join(identityPath, "public.key");
   const secretKeyPath = path.join(identityPath, "secret.key");
-
   let me: { publicKey: Buffer; secretKey: Buffer };
+
   if (!(await fs.pathExists(publicKeyPath))) {
     me = createKeys();
     await fs.writeFile(publicKeyPath, me.publicKey);
