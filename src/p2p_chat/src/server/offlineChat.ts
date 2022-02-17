@@ -8,15 +8,10 @@ import * as path from "path";
 /**
  * getFriendChatObject is a function that gets the chat history between a peer and remotePeer.
  * It constructs an array of objects from a Record<string, peerMetadata> to make rendering on the client simpler.
- * @param window
  * @param message
  * @returns chatHistoryObject: Array<object>>
  */
-export async function getFriendChatObject(
-  window: BrowserWindow,
-  message: string
-): Promise<object> {
-  const friendName = message;
+export async function getFriendChatObject(friendName: string): Promise<object> {
   const chatHistoryObject: Array<object> = [];
   if (global.userName !== null) {
     const candidateChatPath = await buildChatDir(global.userName, friendName);

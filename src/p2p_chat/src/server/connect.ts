@@ -16,11 +16,14 @@ import {
   writeToFS,
   buildChatDir,
   getLengthOfChat,
-  offlineMessagesToBeSent,
+  numOfflineMessagesToBeSent,
+  getChatMessagesSentOffline,
 } from "./fileHelpers";
+
 import { getPublicKeyId, generateKeys } from "./keyHelpers";
 import { formatMessageToStringifiedLog } from "./formatHelpers";
 import { updateLastSeen } from "./onlineOffline";
+import { getFriendChatObject } from "./offlineChat";
 
 const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 // global.hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
@@ -194,20 +197,32 @@ export function connect(
   peer.on("data", async (data) => {
     //Upon receiving new data, check if the received user's length
     // is in sync with messagesSent
-
     const jsonData = JSON.parse(data);
     if (jsonData.type == "numPeerReceived") {
       console.log(
         "Received num from remote peer and is " + jsonData.numPeerReceivedLog
       );
-
+      //Construct an array of objects
       const numRemotePeerReceivedLog = jsonData.numPeerReceivedLog;
-
       const numPeerSentLog = await getLengthOfChat(identity, name);
-      if (offlineMessagesToBeSent(numPeerSentLog, numRemotePeerReceivedLog)) {
-        //Get the dif, and get the last dif # of messages
-      }
       console.log("numPeerSentLog is " + numPeerSentLog);
+      const dif = numOfflineMessagesToBeSent(
+        numPeerSentLog,
+        numRemotePeerReceivedLog
+      );
+      if (dif > 0) {
+        const offlineMessagesToSend: Array<object> =
+          await getChatMessagesSentOffline(identity, name, dif, numPeerSentLog);
+
+        //Now, send each offline message
+        for (const chatMessage of offlineMessagesToSend) {
+          const log = formatMessageToStringifiedLog(
+            identity,
+            chatMessage.toString(),
+            2 //Temp
+          );
+        }
+      }
     } else {
       const receivedLog = data.toString("utf8");
 

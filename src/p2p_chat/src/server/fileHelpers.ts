@@ -90,17 +90,46 @@ export async function getLengthOfChat(
   return lineCount;
 }
 
-export function offlineMessagesToBeSent(
+export function numOfflineMessagesToBeSent(
   numPeerSent: number,
   numRemotePeerReceived: number
-): boolean {
+): number {
   const dif = numPeerSent - numRemotePeerReceived;
   //If the num of messages the peer has sent is greater
   //than the num of messages the remotePeer has received,
   //the dif is the # of offline messages to send to the remotePeer
-  if (dif > 0) {
-    return true;
-  } else {
-    return false;
+  return dif;
+}
+
+export async function getChatMessagesSentOffline(
+  peer: string,
+  remotePeer: string,
+  dif: number,
+  numPeerSent: number
+) {
+  const chatSessionPath = await makeChatSessionPath(peer, remotePeer);
+  //Get lines from numPeerSent - dif to numPeerSent
+  //Ex) numPeerSent = 10, dif = 2, get chat messages from 8 to 10...
+  const start = numPeerSent - dif;
+  let lineCount = 0;
+  const chatHistoryObject: Array<object> = [];
+
+  if (await fs.pathExists(chatSessionPath)) {
+    const fileStream = fs.createReadStream(chatSessionPath);
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity,
+    });
+    // Note: we use the crlfDelay option to recognize all instances of CR LF
+    // ('\r\n') in the file as a single line break.
+    for await (const line of rl) {
+      lineCount++;
+      if (lineCount >= start) {
+        const lineObject = JSON.parse(line);
+        chatHistoryObject.push(lineObject);
+      }
+    }
+
+    return chatHistoryObject;
   }
 }
