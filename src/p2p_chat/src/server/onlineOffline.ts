@@ -78,13 +78,14 @@ export async function updateLastSeen(
 }
 
 /**
- * pollIfFriendsOnline polls if a peer's friends are online. Will be rewritten so currently not documenting.
+ * sendConnectionRequests sends a webRTC connection offer by calling connect() with initiator = true on each friend.
+ * Used on app load to determine whether friends are online or offline.
  * @param me
  * @param name
  * @param initiator
  * @param window
  */
-export async function pollIfFriendsOnline(
+export async function sendConnectionRequests(
   me: Keys,
   name: string,
   initiator: boolean,
@@ -103,23 +104,15 @@ export async function pollIfFriendsOnline(
     const publicKey = friendMetadata.publicKey;
     console.log("Polling if " + friendName + " is available");
     //TODO: make a connection via webRTC
-    const myInitiator = true; //TODO refactor
+    const myInitiator = true;
     connect(me, name, friendName, myInitiator, friends, window);
-
-    //Listen for an ACK for a set period of time
-    // let ackReceived = false;
-    // setTimeout(function () {
-    //   if (!ackReceived) {
-    //     console.log("Ack not received " + friendName + " is offline");
-    //     stream.destroy();
-    //   }
-    // }, 3000);
   }
 }
 
 /**
- * listenForConnectionRequests listens for poll requests whether a peer's friends are online.
- * Will be rewritten so currently not documenting.
+ * listenForConnectionRequests creates listening peers by calling connect() with initiator = false for each friend in the user's
+ * friend file.
+ *
  * @param me
  * @param name
  * @param initiator

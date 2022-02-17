@@ -2,7 +2,7 @@
 import { assert } from "chai";
 
 import {
-  pollIfFriendsOnline,
+  sendConnectionRequests,
   listenForConnectionRequests,
   isRemotePeerOnline,
 } from "../src/server/onlineOffline";

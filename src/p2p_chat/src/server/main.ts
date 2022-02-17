@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
 import "dotenv/config";
 import {
-  pollIfFriendsOnline,
+  sendConnectionRequests,
   listenForConnectionRequests,
   isRemotePeerOnline,
 } from "./onlineOffline";
@@ -83,7 +83,7 @@ async function establishConnection(
   //Create peer listeners for each friend to connect to me
   listenForConnectionRequests(mykeys, name, initiator, friends, window);
   //Create peers to initiate a connection with each friend
-  pollIfFriendsOnline(mykeys, name, initiator, window);
+  sendConnectionRequests(mykeys, name, initiator, window);
   //Package and send a list of the user's friends
   window.webContents.send("get_all_friends_of_user", friends);
 
