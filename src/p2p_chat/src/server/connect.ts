@@ -12,7 +12,12 @@ import {
   PeerSignal,
 } from "../shared/@types/types";
 
-import { writeToFS, buildChatDir } from "./fileHelpers";
+import {
+  writeToFS,
+  buildChatDir,
+  getLengthOfChat,
+  offlineMessagesToBeSent,
+} from "./fileHelpers";
 import { getPublicKeyId, generateKeys } from "./keyHelpers";
 import { formatMessageToStringifiedLog } from "./formatHelpers";
 import { updateLastSeen } from "./onlineOffline";
@@ -61,12 +66,27 @@ export async function handlePeerSentData(
 ) {
   console.log("Connected! " + identity + " to remote " + name);
 
+  //TODO: send the numReceivedMessages property to remote peer
   //TODO: write last_seen upon connecting to a peer
   updateLastSeen(identity, name, window);
 
+  //# of messages received by the remote peer
+  const numPeerReceivedLog = await getLengthOfChat(name, identity);
+  console.log("This is the # of received messages " + numPeerReceivedLog);
+  //Send this number to the peer immediately?
+  const numObject = {
+    type: "numPeerReceived",
+    numPeerReceivedLog: numPeerReceivedLog,
+  };
+  peer.send(JSON.stringify(numObject));
+
   ipcMain.on("send_message_to_peer", async (event, message) => {
     console.log("Listener for writing new data fired");
-    const log = formatMessageToStringifiedLog(identity, message); //Check this
+    const log = formatMessageToStringifiedLog(
+      identity,
+      message,
+      numPeerReceivedLog
+    );
     const chatSessionPath = await buildChatDir(identity, name);
     writeToFS(chatSessionPath, log);
     peer.send(log); //Send the client submitted message to the peer
@@ -172,11 +192,30 @@ export function connect(
 
   //Received new message from sending peer
   peer.on("data", async (data) => {
-    const receivedLog = data.toString("utf8");
-    //Received message from peer, write this to the local fs
-    const chatSessionPath = await buildChatDir(identity, name);
-    writeToFS(chatSessionPath, receivedLog);
-    window.webContents.send("peer_submitted_message", receivedLog);
+    //Upon receiving new data, check if the received user's length
+    // is in sync with messagesSent
+
+    const jsonData = JSON.parse(data);
+    if (jsonData.type == "numPeerReceived") {
+      console.log(
+        "Received num from remote peer and is " + jsonData.numPeerReceivedLog
+      );
+
+      const numRemotePeerReceivedLog = jsonData.numPeerReceivedLog;
+
+      const numPeerSentLog = await getLengthOfChat(identity, name);
+      if (offlineMessagesToBeSent(numPeerSentLog, numRemotePeerReceivedLog)) {
+        //Get the dif, and get the last dif # of messages
+      }
+      console.log("numPeerSentLog is " + numPeerSentLog);
+    } else {
+      const receivedLog = data.toString("utf8");
+
+      //Write received messages to a different file...
+      const chatSessionPath = await buildChatDir(name, identity);
+      writeToFS(chatSessionPath, receivedLog);
+      window.webContents.send("peer_submitted_message", receivedLog);
+    }
   });
   peer.on("close", () => {
     console.log("close");

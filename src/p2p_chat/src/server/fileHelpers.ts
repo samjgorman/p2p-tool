@@ -1,5 +1,6 @@
 import fs from "fs-extra";
 import * as path from "path";
+import readline from "readline";
 
 /**
  * writeToFS is a helper function that writes a message to a fileNamePath.
@@ -29,11 +30,7 @@ export async function buildChatDir(
   peer: string,
   remotePeer: string
 ): Promise<string> {
-  const dirName = peer + "_" + remotePeer;
-  const chatPath = path.join(__dirname, "../../files", "chats", dirName);
-  await fs.mkdirp(chatPath);
-  const fileName = peer + "_" + remotePeer + ".json";
-  const chatSessionPath = path.join(chatPath, fileName);
+  const chatSessionPath = await makeChatSessionPath(peer, remotePeer);
 
   if (!(await fs.pathExists(chatSessionPath))) {
     //TODO: check if opposite path exists too
@@ -47,4 +44,63 @@ export async function buildChatDir(
     });
   }
   return chatSessionPath;
+}
+
+/**
+ * makeChatSessionPath is a helper function that makes a
+ * chat session path that is created in buildChatDir.
+ */
+export async function makeChatSessionPath(
+  peer: string,
+  remotePeer: string
+): Promise<string> {
+  const dirName = peer + "_" + remotePeer;
+  const chatPath = path.join(__dirname, "../../files", "chats", dirName);
+  await fs.mkdirp(chatPath);
+  const fileName = peer + "_" + remotePeer + ".json";
+  const chatSessionPath = path.join(chatPath, fileName);
+
+  return chatSessionPath;
+}
+
+/**
+ * getLengthOfChat is a helper function that gets the length
+ * of an append-only chat log given a peer & remote peer.
+ */
+export async function getLengthOfChat(
+  peer: string,
+  remotePeer: string
+): Promise<number> {
+  let lineCount = 0;
+  const chatSessionPath = await makeChatSessionPath(peer, remotePeer);
+  //Read len of file...
+  if (await fs.pathExists(chatSessionPath)) {
+    const fileStream = fs.createReadStream(chatSessionPath);
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity,
+    });
+    // Note: we use the crlfDelay option to recognize all instances of CR LF
+    // ('\r\n') in the file as a single line break.
+    for await (const line of rl) {
+      lineCount++;
+    }
+  }
+
+  return lineCount;
+}
+
+export function offlineMessagesToBeSent(
+  numPeerSent: number,
+  numRemotePeerReceived: number
+): boolean {
+  const dif = numPeerSent - numRemotePeerReceived;
+  //If the num of messages the peer has sent is greater
+  //than the num of messages the remotePeer has received,
+  //the dif is the # of offline messages to send to the remotePeer
+  if (dif > 0) {
+    return true;
+  } else {
+    return false;
+  }
 }

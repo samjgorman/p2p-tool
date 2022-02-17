@@ -128,6 +128,14 @@ async function registerListeners(window: BrowserWindow) {
     const chatObject = await getFriendChatObject(window, message);
     event.reply("friend_chat_object_sent", chatObject);
   });
+  // ipcMain.on("send_message_to_peer", async (event, message) => {
+  //   console.log("Listener for writing new data fired");
+  //   const log = formatMessageToStringifiedLog(identity, message); //Check this
+  //   const chatSessionPath = await buildChatDir(identity, name);
+  //   writeToFS(chatSessionPath, log);
+  //   peer.send(log); //Send the client submitted message to the peer
+  //   event.reply("i_submitted_message", log); //Send the message back to the renderer process
+  // });
 }
 
 async function registerProtocols() {

@@ -33,7 +33,7 @@ function Chat() {
     });
 
     return function cleanup() {
-      window.Main.removeAllListeners("client_submitted_message");
+      window.Main.removeAllListeners("i_submitted_message");
       window.Main.removeAllListeners("peer_submitted_message");
     };
   });
