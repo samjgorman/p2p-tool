@@ -12,6 +12,8 @@ import { acceptHandshake } from "./accept";
 import { generateInviteLink, handleInviteLink } from "./linkHelpers";
 import { writeToFS, buildChatDir } from "./fileHelpers";
 import { getPublicKeyId, generateKeys } from "./keyHelpers";
+import { formatMessageToStringifiedLog } from "./formatHelpers";
+
 import {
   getAllFriends,
   getFriendChatObject,
@@ -66,6 +68,11 @@ async function establishConnection(
   window: BrowserWindow,
   peerMetadata: string
 ) {
+  //For testing
+  function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
+  }
+  global.testRandomChat = getRandomInt(1000);
   //  Unpack JSON string to an object
   const peerMetadataObj = JSON.parse(peerMetadata);
   const initiator = peerMetadataObj.initiator;
@@ -125,17 +132,29 @@ async function registerListeners(window: BrowserWindow) {
 
   ipcMain.on("get_friend_chat_object", async (event, message) => {
     console.log("Request for getting friend chat object registered" + message);
-    const chatObject = await getFriendChatObject(window, message);
+    const chatObject = await getFriendChatObject(message);
     event.reply("friend_chat_object_sent", chatObject);
   });
-  // ipcMain.on("send_message_to_peer", async (event, message) => {
-  //   console.log("Listener for writing new data fired");
-  //   const log = formatMessageToStringifiedLog(identity, message); //Check this
-  //   const chatSessionPath = await buildChatDir(identity, name);
-  //   writeToFS(chatSessionPath, log);
-  //   peer.send(log); //Send the client submitted message to the peer
-  //   event.reply("i_submitted_message", log); //Send the message back to the renderer process
-  // });
+  ipcMain.on("send_offline_message_to_peer", async (event, message) => {
+    console.log("Listener for writing new data fired");
+
+    console.log(message);
+    const payload = JSON.parse(message);
+    console.log(payload.recipient);
+
+    const log = formatMessageToStringifiedLog(
+      global.userName,
+      payload.message,
+      3
+    ); //Check this
+
+    const chatSessionPath = await buildChatDir(
+      global.userName,
+      payload.recipient
+    );
+    writeToFS(chatSessionPath, log);
+    event.reply("i_submitted_message", log); //Send the message back to the renderer process
+  });
 }
 
 async function registerProtocols() {

@@ -213,19 +213,19 @@ export function connect(
       if (dif > 0) {
         const offlineMessagesToSend: Array<object> =
           await getChatMessagesSentOffline(identity, name, dif, numPeerSentLog);
-
         //Now, send each offline message
         for (const chatMessage of offlineMessagesToSend) {
-          const log = formatMessageToStringifiedLog(
-            identity,
-            chatMessage.toString(),
-            2 //Temp
-          );
+          // const log = formatMessageToStringifiedLog(
+          //   identity,
+          //   chatMessage.toString(),
+          //   2 //Temp
+          // );
+          const chatMessageString = JSON.stringify(chatMessage);
+          peer.send(chatMessageString);
         }
       }
     } else {
       const receivedLog = data.toString("utf8");
-
       //Write received messages to a different file...
       const chatSessionPath = await buildChatDir(name, identity);
       writeToFS(chatSessionPath, receivedLog);

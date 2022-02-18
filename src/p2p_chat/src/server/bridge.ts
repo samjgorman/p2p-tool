@@ -19,6 +19,10 @@ export const api = {
     ipcRenderer.send("send_message_to_peer", message);
   },
 
+  sendOfflineMessageToPeer: (message: string) => {
+    ipcRenderer.send("send_offline_message_to_peer", message);
+  },
+
   sendPeerMetadata: (peer_metadata: string) => {
     ipcRenderer.send("send_peer_metadata", peer_metadata);
   },
