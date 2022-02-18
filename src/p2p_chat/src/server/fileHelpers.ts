@@ -58,8 +58,8 @@ export async function makeChatSessionPath(
   const chatPath = path.join(__dirname, "../../files", "chats", dirName);
   await fs.mkdirp(chatPath);
   //TODO: Remove random num when done testing
-  const fileName =
-    peer + "_" + remotePeer + global.testRandomChat.toString() + ".json";
+  const fileName = peer + "_" + remotePeer + ".json";
+  // + global.testRandomChat.toString() +
   const chatSessionPath = path.join(chatPath, fileName);
 
   return chatSessionPath;

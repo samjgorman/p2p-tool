@@ -69,10 +69,10 @@ async function establishConnection(
   peerMetadata: string
 ) {
   //For testing
-  function getRandomInt(max) {
-    return Math.floor(Math.random() * max);
-  }
-  global.testRandomChat = getRandomInt(2); //1 or 2
+  // function getRandomInt(max) {
+  //   return Math.floor(Math.random() * max);
+  // }
+  // global.testRandomChat = getRandomInt(100); //1 or 2
   //  Unpack JSON string to an object
   const peerMetadataObj = JSON.parse(peerMetadata);
   const initiator = peerMetadataObj.initiator;
