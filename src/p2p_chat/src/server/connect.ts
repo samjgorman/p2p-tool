@@ -268,7 +268,8 @@ export function connect(
   });
   peer.on("end", () => {
     ipcMain.removeAllListeners("send_message_to_peer");
-
+    //After disconnecting, attempt to connect to this peer again
+    connect(me, identity, name, initiator, friends, window);
     console.log("Disconnected!");
   });
 }
