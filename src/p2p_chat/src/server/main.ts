@@ -72,7 +72,7 @@ async function establishConnection(
   function getRandomInt(max) {
     return Math.floor(Math.random() * max);
   }
-  global.testRandomChat = getRandomInt(1000);
+  global.testRandomChat = getRandomInt(2); //1 or 2
   //  Unpack JSON string to an object
   const peerMetadataObj = JSON.parse(peerMetadata);
   const initiator = peerMetadataObj.initiator;
@@ -145,7 +145,7 @@ async function registerListeners(window: BrowserWindow) {
     const log = formatMessageToStringifiedLog(
       global.userName,
       payload.message,
-      3
+      global.numMessagesPeerReceived
     ); //Check this
 
     const chatSessionPath = await buildChatDir(

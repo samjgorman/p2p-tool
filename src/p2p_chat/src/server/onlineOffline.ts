@@ -18,7 +18,10 @@ import {
 } from "./offlineChat";
 import { connect } from "./connect";
 
-const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
+// const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
+const hub = signalhub("p2p-tool", [
+  "https://evening-brook-96941.herokuapp.com/",
+]);
 
 /**
  * isRemotePeerOnline is a helper function that determines whether a remotePeer is currently online.

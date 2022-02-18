@@ -10,6 +10,8 @@ import {
   PublicChannelMessage,
   PublicChannelMessagePayload,
   PeerSignal,
+  OfflineSignal,
+  OnlineData,
 } from "../shared/@types/types";
 
 import {
@@ -25,7 +27,7 @@ import { formatMessageToStringifiedLog } from "./formatHelpers";
 import { updateLastSeen } from "./onlineOffline";
 import { getFriendChatObject } from "./offlineChat";
 
-const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
+const hub = signalhub("p2p-tool", ["https://evening-brook-96941.herokuapp.com/"]);
 // global.hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 
 /**
@@ -57,6 +59,23 @@ export function constructPeer(initiator: boolean) {
   return peer;
 }
 
+export async function sendOfflineSignal(
+  peer: Peer.Instance,
+  name: string,
+  identity: string,
+  numMessagesPeerReceived: number
+) {
+  //# of messages received by the remote peer
+  console.log("This is the # of received messages " + numMessagesPeerReceived);
+  //Send this number to the peer immediately?
+  const offlineSignal: OfflineSignal = {
+    type: "offlineSignal",
+    numMessagesPeerReceived: numMessagesPeerReceived,
+  };
+
+  peer.send(JSON.stringify(offlineSignal));
+}
+
 /**
  * handleConnectedState is a helper function that sends message the peer has sent when connected
  * to the client via IPC.  The message is formatted and written to chats.
@@ -68,31 +87,28 @@ export async function handlePeerSentData(
   window: BrowserWindow
 ) {
   console.log("Connected! " + identity + " to remote " + name);
-
   //TODO: send the numReceivedMessages property to remote peer
-  //TODO: write last_seen upon connecting to a peer
   updateLastSeen(identity, name, window);
-
-  //# of messages received by the remote peer
-  const numPeerReceivedLog = await getLengthOfChat(name, identity);
-  console.log("This is the # of received messages " + numPeerReceivedLog);
-  //Send this number to the peer immediately?
-  const numObject = {
-    type: "numPeerReceived",
-    numPeerReceivedLog: numPeerReceivedLog,
-  };
-  peer.send(JSON.stringify(numObject));
+  global.numMessagesPeerReceived = await getLengthOfChat(name, identity);
+  sendOfflineSignal(peer, name, identity, global.numMessagesPeerReceived);
 
   ipcMain.on("send_message_to_peer", async (event, message) => {
     console.log("Listener for writing new data fired");
     const log = formatMessageToStringifiedLog(
       identity,
       message,
-      numPeerReceivedLog
+      global.numMessagesPeerReceived
     );
     const chatSessionPath = await buildChatDir(identity, name);
     writeToFS(chatSessionPath, log);
-    peer.send(log); //Send the client submitted message to the peer
+
+    //Package as OnlineData
+    const onlineData: OnlineData = {
+      type: "onlineData",
+      data: log,
+    };
+
+    peer.send(JSON.stringify(onlineData)); //Send the client submitted message to the peer
     event.reply("i_submitted_message", log); //Send the message back to the renderer process
   });
 }
@@ -102,6 +118,35 @@ export async function handleRemotePeerSentData(
   identity: string,
   name: string
 ) {}
+
+export async function handleOfflineMessages(
+  peer: Peer.Instance,
+  receivedData: OfflineSignal,
+  identity: string,
+  name: string
+) {
+  //Construct an array of objects
+  const numRemotePeerReceivedLog = receivedData.numMessagesPeerReceived;
+  const numPeerSentLog = await getLengthOfChat(identity, name);
+  console.log("numPeerSentLog is " + numPeerSentLog);
+  const dif = numOfflineMessagesToBeSent(
+    numPeerSentLog,
+    numRemotePeerReceivedLog
+  );
+  if (dif > 0) {
+    const offlineMessagesToSend: Array<object> =
+      await getChatMessagesSentOffline(identity, name, dif, numPeerSentLog);
+    //Now, send each offline message as OnlineData
+    for (const chatMessage of offlineMessagesToSend) {
+      const onlineData: OnlineData = {
+        type: "onlineData",
+        data: JSON.stringify(chatMessage),
+      };
+
+      peer.send(JSON.stringify(onlineData));
+    }
+  }
+}
 
 /**
  * Connect retrieves the publicKey of the remotePeer, then creates a
@@ -194,38 +239,18 @@ export function connect(
   });
 
   //Received new message from sending peer
-  peer.on("data", async (data) => {
+  peer.on("data", async (data: string) => {
     //Upon receiving new data, check if the received user's length
     // is in sync with messagesSent
-    const jsonData = JSON.parse(data);
-    if (jsonData.type == "numPeerReceived") {
-      console.log(
-        "Received num from remote peer and is " + jsonData.numPeerReceivedLog
-      );
-      //Construct an array of objects
-      const numRemotePeerReceivedLog = jsonData.numPeerReceivedLog;
-      const numPeerSentLog = await getLengthOfChat(identity, name);
-      console.log("numPeerSentLog is " + numPeerSentLog);
-      const dif = numOfflineMessagesToBeSent(
-        numPeerSentLog,
-        numRemotePeerReceivedLog
-      );
-      if (dif > 0) {
-        const offlineMessagesToSend: Array<object> =
-          await getChatMessagesSentOffline(identity, name, dif, numPeerSentLog);
-        //Now, send each offline message
-        for (const chatMessage of offlineMessagesToSend) {
-          // const log = formatMessageToStringifiedLog(
-          //   identity,
-          //   chatMessage.toString(),
-          //   2 //Temp
-          // );
-          const chatMessageString = JSON.stringify(chatMessage);
-          peer.send(chatMessageString);
-        }
-      }
-    } else {
-      const receivedLog = data.toString("utf8");
+    const parsedData: OfflineSignal | OnlineData = JSON.parse(data);
+
+    if (parsedData.type == "offlineSignal") {
+      console.log("Got num remote peer  " + parsedData.numMessagesPeerReceived);
+      handleOfflineMessages(peer, parsedData, identity, name);
+    } else if (parsedData.type == "onlineData") {
+      // const receivedLog = parsedData.data.toString("utf8");
+      const receivedLog = parsedData.data;
+
       //Write received messages to a different file...
       const chatSessionPath = await buildChatDir(name, identity);
       writeToFS(chatSessionPath, receivedLog);

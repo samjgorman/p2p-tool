@@ -19,7 +19,10 @@ import signalhub from "signalhub";
 import { generateInviteLink, handleInviteLink } from "./linkHelpers";
 import { getPublicKeyId, generateKeys } from "./keyHelpers";
 
-const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
+// const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
+const hub = signalhub("p2p-tool", [
+  "https://evening-brook-96941.herokuapp.com/",
+]);
 
 /**
  * initiateHandshake constructs a protocol URL inviteLink, broadcasts an invite

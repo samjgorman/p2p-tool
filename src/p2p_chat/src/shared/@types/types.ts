@@ -31,3 +31,13 @@ export type PeerSignal = {
   type: "signal";
   data: any;
 };
+
+export type OfflineSignal = {
+  type: "offlineSignal";
+  numMessagesPeerReceived: number;
+};
+
+export type OnlineData = {
+  type: "onlineData";
+  data: string;
+};

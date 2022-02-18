@@ -6,5 +6,6 @@ declare global {
   let userName: string;
   let hub: string;
   let testRandomChat: number;
+  let numMessagesPeerReceived: number;
 }
 export {};
