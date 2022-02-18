@@ -125,11 +125,11 @@ export async function getChatMessagesSentOffline(
     // Note: we use the crlfDelay option to recognize all instances of CR LF
     // ('\r\n') in the file as a single line break.
     for await (const line of rl) {
-      lineCount++;
       if (lineCount >= start) {
         const lineObject = JSON.parse(line);
         chatHistoryObject.push(lineObject);
       }
+      lineCount++;
     }
 
     return chatHistoryObject;

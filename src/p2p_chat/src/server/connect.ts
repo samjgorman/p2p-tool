@@ -27,7 +27,9 @@ import { formatMessageToStringifiedLog } from "./formatHelpers";
 import { updateLastSeen } from "./onlineOffline";
 import { getFriendChatObject } from "./offlineChat";
 
-const hub = signalhub("p2p-tool", ["https://evening-brook-96941.herokuapp.com/"]);
+const hub = signalhub("p2p-tool", [
+  "https://evening-brook-96941.herokuapp.com/",
+]);
 // global.hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 
 /**
@@ -92,7 +94,7 @@ export async function handlePeerSentData(
   global.numMessagesPeerReceived = await getLengthOfChat(name, identity);
   sendOfflineSignal(peer, name, identity, global.numMessagesPeerReceived);
 
-  ipcMain.on("send_message_to_peer", async (event, message) => {
+  async function listener(event: Electron.IpcMainEvent, message) {
     console.log("Listener for writing new data fired");
     const log = formatMessageToStringifiedLog(
       identity,
@@ -110,7 +112,8 @@ export async function handlePeerSentData(
 
     peer.send(JSON.stringify(onlineData)); //Send the client submitted message to the peer
     event.reply("i_submitted_message", log); //Send the message back to the renderer process
-  });
+  }
+  ipcMain.on("send_message_to_peer", listener);
 }
 
 export async function handleRemotePeerSentData(
@@ -264,6 +267,8 @@ export function connect(
     console.log("error", error);
   });
   peer.on("end", () => {
+    ipcMain.removeAllListeners("send_message_to_peer");
+
     console.log("Disconnected!");
   });
 }
