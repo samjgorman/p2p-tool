@@ -47,13 +47,13 @@ export function constructPeer(initiator: boolean) {
       iceServers: [
         {
           urls: "stun:numb.viagenie.ca?transport=tcp", //avoid UDP rules & work around network blocks
-          username: process.env.STUN_TURN_USER,
-          credential: process.env.STUN_TURN_PASS,
+          username: "samjgorman@gmail.com",
+          credential: "p2pchat",
         },
         {
           urls: "turn:numb.viagenie.ca?transport=tcp",
-          username: process.env.STUN_TURN_USER,
-          credential: process.env.STUN_TURN_PASS,
+          username: "samjgorman@gmail.com",
+          credential: "p2pchat",
         },
       ],
     },
