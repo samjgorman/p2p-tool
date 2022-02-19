@@ -4,17 +4,19 @@
  * to the filesystem.
  * @param identity
  * @param message
+ * @param sentOverWebRTC boolean representing whether message was sent over WebRTC or offline
  * @returns
  */
 export function formatMessageToStringifiedLog(
   identity: string,
-  message: string
+  message: string,
+  numReceivedMessagesFromRemotePeer: number
 ): string {
   const log = {
     timestamp: Date.now(),
     sender: identity,
     message: message,
-    //TODO: write a last_synced or delivered property
+    numReceivedMessagesFromRemotePeer: numReceivedMessagesFromRemotePeer,
   };
   const stringified_log = JSON.stringify(log);
   return stringified_log;

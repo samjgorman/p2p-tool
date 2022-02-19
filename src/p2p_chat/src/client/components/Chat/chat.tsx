@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { FriendData } from "../../../shared/@types/types";
 import ChatHistory from "../ChatHistory/chatHistory";
 import ChatInput from "../ChatInput/chatInput";
 import ChatMessage from "../ChatMessage/message";
@@ -12,6 +13,11 @@ import ChatMessage from "../ChatMessage/message";
 function Chat() {
   const [stackPopulated, setStackPopulated] = useState(false);
   const [messagesToRenderStack, setMessagesToRenderStack] = useState([]);
+  const [friendReceived, setFriendReceived] = useState(false);
+  const [friendName, setFriendName] = useState("");
+
+  const [friendChatObject, setFriendChatObject] = useState([]);
+
   useEffect(() => {
     //Listen for messages the client has sent
     window.Main.on("i_submitted_message", (event, arg) => {
@@ -21,9 +27,11 @@ function Chat() {
       const newState = [...messagesToRenderStack, messageObjToRender];
       setMessagesToRenderStack(newState);
       setStackPopulated(true);
+      //Attempt to send a signal
+      window.Main.attemptToSendToPeer(event);
     });
     //Listen for messages the client has received
-    window.Main.on("peer_submitted_message", (event, arg) => {
+    window.Main.on("peer_submitted_message", (event: string, arg) => {
       console.log("Chat object received from peer");
       console.log(event);
       const messageObjToRender = JSON.parse(event);
@@ -32,15 +40,24 @@ function Chat() {
       setStackPopulated(true);
     });
 
+    window.Main.on("friend_data_sent", (event: FriendData, arg) => {
+      console.log("Friend data received by client ");
+      console.log(event);
+      setFriendReceived(true);
+      setFriendName(event.friendName);
+      setFriendChatObject(event.chatHistory);
+    });
+
     return function cleanup() {
-      window.Main.removeAllListeners("client_submitted_message");
+      window.Main.removeAllListeners("i_submitted_message");
       window.Main.removeAllListeners("peer_submitted_message");
+      window.Main.removeAllListeners("friend_data_sent");
     };
   });
 
   return (
     <div className="LiveChat">
-      <ChatHistory />
+      {friendReceived && <ChatHistory chatHistory={friendChatObject} />}
       {stackPopulated &&
         messagesToRenderStack.map((chatMessage, i) => (
           <ChatMessage
@@ -50,7 +67,7 @@ function Chat() {
             sender={chatMessage.sender}
           />
         ))}
-      <ChatInput></ChatInput>
+      {friendReceived && <ChatInput recipient={friendName}></ChatInput>}
     </div>
   );
 }

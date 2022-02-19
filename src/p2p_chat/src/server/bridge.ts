@@ -19,14 +19,21 @@ export const api = {
     ipcRenderer.send("send_message_to_peer", message);
   },
 
+  sendOfflineMessageToPeer: (message: string) => {
+    ipcRenderer.send("send_offline_message_to_peer", message);
+  },
+
   sendPeerMetadata: (peer_metadata: string) => {
     ipcRenderer.send("send_peer_metadata", peer_metadata);
   },
 
   getFriendChatObject: (friend: string) => {
-    ipcRenderer.send("get_friend_chat_object", friend);
+    ipcRenderer.send("get_friend_data", friend);
   },
 
+  attemptToSendToPeer: (message: string) => {
+    ipcRenderer.send("attempt_to_send_online_message_to_peer", message);
+  },
   /**
    * Provide an easier way to listen to events
    */

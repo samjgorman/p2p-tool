@@ -31,3 +31,23 @@ export type PeerSignal = {
   type: "signal";
   data: any;
 };
+
+export type OfflineSignal = {
+  type: "offlineSignal";
+  numMessagesPeerReceived: number;
+};
+
+export type OnlineData = {
+  type: "onlineData";
+  data: string;
+};
+
+export type FriendData = {
+  friendName: string;
+  chatHistory: Array<object>;
+};
+
+export type MessageData = {
+  recipient: string;
+  message: string;
+};

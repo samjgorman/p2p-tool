@@ -15,7 +15,10 @@ import {
 import { connect } from "./connect";
 import { getPublicKeyId } from "./keyHelpers";
 
-const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
+// const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
+const hub = signalhub("p2p-tool", [
+  "https://evening-brook-96941.herokuapp.com/",
+]);
 
 /**
  * acceptHandshake constructs a password & publicKey, and subscribes & listens for

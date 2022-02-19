@@ -17,6 +17,10 @@ function Confirmation(props) {
       setInvitedBy(event);
       setDataReceived(true);
     });
+
+    return function cleanup() {
+      window.Main.removeAllListeners("confirm_connection");
+    };
   });
 
   function handleConfirmation() {

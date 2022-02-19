@@ -10,14 +10,26 @@ import {
   PublicChannelMessage,
   PublicChannelMessagePayload,
   PeerSignal,
+  OfflineSignal,
+  OnlineData,
 } from "../shared/@types/types";
 
-import { writeToFS, buildChatDir } from "./fileHelpers";
+import {
+  writeToFS,
+  buildChatDir,
+  getLengthOfChat,
+  numOfflineMessagesToBeSent,
+  getChatMessagesSentOffline,
+} from "./fileHelpers";
+
 import { getPublicKeyId, generateKeys } from "./keyHelpers";
 import { formatMessageToStringifiedLog } from "./formatHelpers";
 import { updateLastSeen } from "./onlineOffline";
+import { getFriendData } from "./offlineChat";
 
-const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
+const hub = signalhub("p2p-tool", [
+  "https://evening-brook-96941.herokuapp.com/",
+]);
 // global.hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 
 /**
@@ -49,6 +61,23 @@ export function constructPeer(initiator: boolean) {
   return peer;
 }
 
+export async function sendOfflineSignal(
+  peer: Peer.Instance,
+  name: string,
+  identity: string,
+  numMessagesPeerReceived: number
+) {
+  //# of messages received by the remote peer
+  console.log("This is the # of received messages " + numMessagesPeerReceived);
+  //Send this number to the peer immediately?
+  const offlineSignal: OfflineSignal = {
+    type: "offlineSignal",
+    numMessagesPeerReceived: numMessagesPeerReceived,
+  };
+
+  peer.send(JSON.stringify(offlineSignal));
+}
+
 /**
  * handleConnectedState is a helper function that sends message the peer has sent when connected
  * to the client via IPC.  The message is formatted and written to chats.
@@ -60,25 +89,77 @@ export async function handlePeerSentData(
   window: BrowserWindow
 ) {
   console.log("Connected! " + identity + " to remote " + name);
-
-  //TODO: write last_seen upon connecting to a peer
+  //TODO: send the numReceivedMessages property to remote peer
   updateLastSeen(identity, name, window);
+  global.numMessagesPeerReceived = await getLengthOfChat(name, identity);
+  sendOfflineSignal(peer, name, identity, global.numMessagesPeerReceived);
 
-  ipcMain.on("send_message_to_peer", async (event, message) => {
-    console.log("Listener for writing new data fired");
-    const log = formatMessageToStringifiedLog(identity, message); //Check this
-    const chatSessionPath = await buildChatDir(identity, name);
-    writeToFS(chatSessionPath, log);
-    peer.send(log); //Send the client submitted message to the peer
-    event.reply("i_submitted_message", log); //Send the message back to the renderer process
-  });
+  async function listener(event: Electron.IpcMainEvent, message: string) {
+    //Package as OnlineData
+    console.log("Listener to package online data fired");
+    const onlineData: OnlineData = {
+      type: "onlineData",
+      data: message,
+    };
+    peer.send(JSON.stringify(onlineData)); //Send the client submitted message to the peer
+  }
+  ipcMain.on("attempt_to_send_online_message_to_peer", listener);
+  // ipcMain.addListener("attempt_to_send_online_message_to_peer", listener);
 }
 
 export async function handleRemotePeerSentData(
   peer: Peer.Instance,
   identity: string,
+  name: string,
+  data: string,
+  window: BrowserWindow
+) {
+  //Upon receiving new data, check if the received user's length
+  // is in sync with messagesSent
+  const parsedData: OfflineSignal | OnlineData = JSON.parse(data);
+
+  if (parsedData.type == "offlineSignal") {
+    console.log("Got num remote peer  " + parsedData.numMessagesPeerReceived);
+    handleOfflineMessages(peer, parsedData, identity, name);
+  } else if (parsedData.type == "onlineData") {
+    // const receivedLog = parsedData.data.toString("utf8");
+    const receivedLog: string = parsedData.data;
+    console.log("the received log onData is " + receivedLog);
+    //Write received messages to a different file...
+    const chatSessionPath = await buildChatDir(name, identity);
+    writeToFS(chatSessionPath, receivedLog);
+    window.webContents.send("peer_submitted_message", receivedLog);
+  }
+}
+
+export async function handleOfflineMessages(
+  peer: Peer.Instance,
+  receivedData: OfflineSignal,
+  identity: string,
   name: string
-) {}
+) {
+  //Construct an array of objects
+  const numRemotePeerReceivedLog = receivedData.numMessagesPeerReceived;
+  const numPeerSentLog = await getLengthOfChat(identity, name);
+  console.log("numPeerSentLog is " + numPeerSentLog);
+  const dif = numOfflineMessagesToBeSent(
+    numPeerSentLog,
+    numRemotePeerReceivedLog
+  );
+  if (dif > 0) {
+    const offlineMessagesToSend: Array<object> =
+      await getChatMessagesSentOffline(identity, name, dif, numPeerSentLog);
+    //Now, send each offline message as OnlineData
+    for (const chatMessage of offlineMessagesToSend) {
+      const onlineData: OnlineData = {
+        type: "onlineData",
+        data: JSON.stringify(chatMessage),
+      };
+
+      peer.send(JSON.stringify(onlineData));
+    }
+  }
+}
 
 /**
  * Connect retrieves the publicKey of the remotePeer, then creates a
@@ -171,20 +252,22 @@ export function connect(
   });
 
   //Received new message from sending peer
-  peer.on("data", async (data) => {
-    const receivedLog = data.toString("utf8");
-    //Received message from peer, write this to the local fs
-    const chatSessionPath = await buildChatDir(identity, name);
-    writeToFS(chatSessionPath, receivedLog);
-    window.webContents.send("peer_submitted_message", receivedLog);
+  peer.on("data", async (data: string) => {
+    await handleRemotePeerSentData(peer, identity, name, data, window);
   });
+
   peer.on("close", () => {
     console.log("close");
+    ipcMain.removeAllListeners("attempt_to_send_online_message_to_peer");
   });
   peer.on("error", (error) => {
     console.log("error", error);
   });
   peer.on("end", () => {
+    // ipcMain.removeAllListeners("send_message_to_peer");
+    ipcMain.removeAllListeners("attempt_to_send_online_message_to_peer");
+    //After disconnecting, attempt to connect to this peer again
+    // connect(me, identity, name, initiator, friends, window);
     console.log("Disconnected!");
   });
 }
