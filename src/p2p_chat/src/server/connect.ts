@@ -103,14 +103,34 @@ export async function handlePeerSentData(
     };
     peer.send(JSON.stringify(onlineData)); //Send the client submitted message to the peer
   }
-  ipcMain.on("attempt_to_send_online_message_to_peer", listener);
+  ipcMain.once("attempt_to_send_online_message_to_peer", listener);
+  ipcMain.addListener("attempt_to_send_online_message_to_peer", listener);
 }
 
 export async function handleRemotePeerSentData(
   peer: Peer.Instance,
   identity: string,
-  name: string
-) {}
+  name: string,
+  data: string,
+  window: BrowserWindow
+) {
+  //Upon receiving new data, check if the received user's length
+  // is in sync with messagesSent
+  const parsedData: OfflineSignal | OnlineData = JSON.parse(data);
+
+  if (parsedData.type == "offlineSignal") {
+    console.log("Got num remote peer  " + parsedData.numMessagesPeerReceived);
+    handleOfflineMessages(peer, parsedData, identity, name);
+  } else if (parsedData.type == "onlineData") {
+    // const receivedLog = parsedData.data.toString("utf8");
+    const receivedLog: string = parsedData.data;
+    console.log("the received log onData is " + receivedLog);
+    //Write received messages to a different file...
+    const chatSessionPath = await buildChatDir(name, identity);
+    writeToFS(chatSessionPath, receivedLog);
+    window.webContents.send("peer_submitted_message", receivedLog);
+  }
+}
 
 export async function handleOfflineMessages(
   peer: Peer.Instance,
@@ -233,25 +253,12 @@ export function connect(
 
   //Received new message from sending peer
   peer.on("data", async (data: string) => {
-    //Upon receiving new data, check if the received user's length
-    // is in sync with messagesSent
-    const parsedData: OfflineSignal | OnlineData = JSON.parse(data);
-
-    if (parsedData.type == "offlineSignal") {
-      console.log("Got num remote peer  " + parsedData.numMessagesPeerReceived);
-      handleOfflineMessages(peer, parsedData, identity, name);
-    } else if (parsedData.type == "onlineData") {
-      // const receivedLog = parsedData.data.toString("utf8");
-      const receivedLog: string = parsedData.data;
-      console.log("the received log onData is " + receivedLog);
-      //Write received messages to a different file...
-      const chatSessionPath = await buildChatDir(name, identity);
-      writeToFS(chatSessionPath, receivedLog);
-      window.webContents.send("peer_submitted_message", receivedLog);
-    }
+    await handleRemotePeerSentData(peer, identity, name, data, window);
   });
+
   peer.on("close", () => {
     console.log("close");
+    ipcMain.removeAllListeners("attempt_to_send_online_message_to_peer");
   });
   peer.on("error", (error) => {
     console.log("error", error);
