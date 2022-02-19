@@ -61,15 +61,22 @@ export function constructPeer(initiator: boolean) {
   return peer;
 }
 
+/**
+ * sendOfflineSignal is a helper function that creates an OfflineSignal object
+ * to send to the remote peer.  This object contains the number of messages
+ * the peer has received, which is used for determing whether there exist
+ * messages that were sent offline by the remote peer that need to be received.
+ * @param peer
+ * @param name
+ * @param identity
+ * @param numMessagesPeerReceived
+ */
 export async function sendOfflineSignal(
   peer: Peer.Instance,
   name: string,
   identity: string,
   numMessagesPeerReceived: number
 ) {
-  //# of messages received by the remote peer
-  console.log("This is the # of received messages " + numMessagesPeerReceived);
-  //Send this number to the peer immediately?
   const offlineSignal: OfflineSignal = {
     type: "offlineSignal",
     numMessagesPeerReceived: numMessagesPeerReceived,
@@ -79,8 +86,9 @@ export async function sendOfflineSignal(
 }
 
 /**
- * handleConnectedState is a helper function that sends message the peer has sent when connected
- * to the client via IPC.  The message is formatted and written to chats.
+ * handlePeerSentData is a helper function that creates an OfflineSignal object via sendOfflineSignal,
+ * and listens for attempts to send online messages to a remote peer.  If an event is found,
+ * the function creates an OnlineData object to send to the remote peer over webRTC.
  */
 export async function handlePeerSentData(
   peer: Peer.Instance,
@@ -89,13 +97,11 @@ export async function handlePeerSentData(
   window: BrowserWindow
 ) {
   console.log("Connected! " + identity + " to remote " + name);
-  //TODO: send the numReceivedMessages property to remote peer
   updateLastSeen(identity, name, window);
   global.numMessagesPeerReceived = await getLengthOfChat(name, identity);
   sendOfflineSignal(peer, name, identity, global.numMessagesPeerReceived);
 
   async function listener(event: Electron.IpcMainEvent, message: string) {
-    //Package as OnlineData
     console.log("Listener to package online data fired");
     const onlineData: OnlineData = {
       type: "onlineData",
@@ -104,9 +110,14 @@ export async function handlePeerSentData(
     peer.send(JSON.stringify(onlineData)); //Send the client submitted message to the peer
   }
   ipcMain.on("attempt_to_send_online_message_to_peer", listener);
-  // ipcMain.addListener("attempt_to_send_online_message_to_peer", listener);
 }
 
+/**
+ * handleRemotePeerSentData is a helper function that processes data sent by
+ * the remote peer over webRTC.  If the type is an offline signal, it calls handleOfflineMessages
+ * to send offline messages if necessary.  If type is online data, the function writes this data
+ * to the local file system and sends this message to the client via IPC to render.
+ */
 export async function handleRemotePeerSentData(
   peer: Peer.Instance,
   identity: string,
@@ -119,19 +130,29 @@ export async function handleRemotePeerSentData(
   const parsedData: OfflineSignal | OnlineData = JSON.parse(data);
 
   if (parsedData.type == "offlineSignal") {
-    console.log("Got num remote peer  " + parsedData.numMessagesPeerReceived);
     handleOfflineMessages(peer, parsedData, identity, name);
   } else if (parsedData.type == "onlineData") {
-    // const receivedLog = parsedData.data.toString("utf8");
     const receivedLog: string = parsedData.data;
-    console.log("the received log onData is " + receivedLog);
-    //Write received messages to a different file...
     const chatSessionPath = await buildChatDir(name, identity);
     writeToFS(chatSessionPath, receivedLog);
     window.webContents.send("peer_submitted_message", receivedLog);
   }
 }
 
+/**
+ * handleOfflineMessages is a helper function that determines whether
+ * the peer has sent messages to the remote peer offline that must now
+ * be sent.  It does so by getting the length of the peerSentLog,
+ * and comparing to the remotePeerReceivedLog.
+ *
+ * If the difference of peerSentLog - remotePeerReceivedLog > 0, there
+ * exists offline messages to be sent.  The function then grabs these messages, formats them
+ * as OnlineData,  and sends them one at a time via webRTC.
+ * @param peer
+ * @param receivedData
+ * @param identity
+ * @param name
+ */
 export async function handleOfflineMessages(
   peer: Peer.Instance,
   receivedData: OfflineSignal,
@@ -196,7 +217,6 @@ export function connect(
   friends: Record<string, FriendMetadata>,
   window: BrowserWindow
 ) {
-  //Get public key of recipient of message
   const publicKey = Buffer.from(friends[name].publicKey, "base64");
   console.log("Public key of recipient");
   console.log(friends[name]);
@@ -264,10 +284,7 @@ export function connect(
     console.log("error", error);
   });
   peer.on("end", () => {
-    // ipcMain.removeAllListeners("send_message_to_peer");
     ipcMain.removeAllListeners("attempt_to_send_online_message_to_peer");
-    //After disconnecting, attempt to connect to this peer again
-    // connect(me, identity, name, initiator, friends, window);
     console.log("Disconnected!");
   });
 }
