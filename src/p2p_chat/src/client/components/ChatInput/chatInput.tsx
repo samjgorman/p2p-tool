@@ -1,31 +1,33 @@
 import React from "react";
+import { MessageData } from "../../../shared/@types/types";
 
 /**
  *  Handler triggered with onSubmit in Chat to send peer metadata to Electron.
  * @param event Submitted form element
  */
-async function handleMessage(event: React.FormEvent<HTMLFormElement>) {
+async function handleMessage(
+  event: React.FormEvent<HTMLFormElement>,
+  recipient: string
+) {
   event.preventDefault();
   const raw_message = event.target as HTMLInputElement;
-  const payload = raw_message[0].value;
-  window.Main.sendMessageToPeer(payload);
-}
+  const payload_object: MessageData = {
+    recipient: recipient,
+    message: raw_message[0].value,
+  };
 
-async function handleOfflineMessage(event: React.FormEvent<HTMLFormElement>) {
-  event.preventDefault();
-  const raw_message = event.target as HTMLInputElement;
-  const message = raw_message[0].value;
-  const recipient = raw_message[1].value;
-  const objToSend = { message: message, recipient: recipient };
-  const payload = JSON.stringify(objToSend);
-  window.Main.sendOfflineMessageToPeer(payload);
+  const payload = JSON.stringify(payload_object);
+
+  window.Main.sendMessageToPeer(payload);
+  console.log("handler firing");
+  console.log(payload);
 }
 
 /**
  * Functional component that allows a user to send a chat message
  * and triggers handleMessage to send to electron.
  */
-function Chat() {
+function ChatInput(props) {
   return (
     <React.Fragment>
       <div className="LiveChatMessageForm">
@@ -33,25 +35,9 @@ function Chat() {
           className="liveChat-message-form"
           noValidate
           autoComplete="off"
-          onSubmit={(event) => handleMessage(event)}
+          onSubmit={(event) => handleMessage(event, props.recipient)}
         >
           <input className="chat-field" placeholder="Send a message..." />
-          <input className="send-chat-button" type="submit" value="Send" />
-        </form>
-      </div>
-
-      <div className="LiveChatOfflineMessageForm">
-        <form
-          className="liveChat-message-form"
-          noValidate
-          autoComplete="off"
-          onSubmit={(event) => handleOfflineMessage(event)}
-        >
-          <input
-            className="chat-field"
-            placeholder="Send an offline message..."
-          />
-          <input className="chat-field" placeholder="Who are you messaging?" />
           <input className="send-chat-button" type="submit" value="Send" />
         </form>
       </div>
@@ -59,4 +45,4 @@ function Chat() {
   );
 }
 
-export default Chat;
+export default ChatInput;

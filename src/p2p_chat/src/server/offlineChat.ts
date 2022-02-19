@@ -2,7 +2,7 @@ import readline from "readline";
 import { writeToFS, buildChatDir } from "./fileHelpers";
 import fs from "fs-extra";
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
-import { Keys, FriendMetadata } from "../shared/@types/types";
+import { Keys, FriendMetadata, FriendData } from "../shared/@types/types";
 import * as path from "path";
 
 /**
@@ -11,7 +11,7 @@ import * as path from "path";
  * @param message
  * @returns chatHistoryObject: Array<object>>
  */
-export async function getFriendChatObject(friendName: string): Promise<object> {
+export async function getFriendData(friendName: string): Promise<object> {
   const chatHistoryObject: Array<object> = [];
   if (global.userName !== null) {
     const candidateChatPath = await buildChatDir(global.userName, friendName);
@@ -29,9 +29,14 @@ export async function getFriendChatObject(friendName: string): Promise<object> {
         const lineObject = JSON.parse(line);
         chatHistoryObject.push(lineObject);
       }
-      return chatHistoryObject;
+      const friendData: FriendData = {
+        friendName: friendName,
+        chatHistory: chatHistoryObject,
+      };
+      return friendData;
     } else {
       console.log("No chat history yet");
+      return {};
     }
   } else {
     console.error("Identity not yet established");

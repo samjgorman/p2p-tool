@@ -71,6 +71,7 @@ function FriendsList() {
       console.log(event);
       const friendsRecord = event; //Typecheck this as a Record<string, FriendMetadata>
       const friendsArray = convertRecordToArray(friendsRecord);
+
       setFriends(friendsArray);
       setFriendsPopulated(true);
       //TODO: write test to verify friendsArray renders correctly

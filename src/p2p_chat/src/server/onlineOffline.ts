@@ -11,11 +11,7 @@ import {
   InviteAckMessage,
   PeerSignal,
 } from "../shared/@types/types";
-import {
-  getAllFriends,
-  getFriendChatObject,
-  getFriendsPath,
-} from "./offlineChat";
+import { getAllFriends, getFriendData, getFriendsPath } from "./offlineChat";
 import { connect } from "./connect";
 
 // const hub = signalhub("p2p-tool", ["http://localhost:8080/"]);

@@ -25,7 +25,7 @@ import {
 import { getPublicKeyId, generateKeys } from "./keyHelpers";
 import { formatMessageToStringifiedLog } from "./formatHelpers";
 import { updateLastSeen } from "./onlineOffline";
-import { getFriendChatObject } from "./offlineChat";
+import { getFriendData } from "./offlineChat";
 
 const hub = signalhub("p2p-tool", [
   "https://evening-brook-96941.herokuapp.com/",
@@ -94,26 +94,16 @@ export async function handlePeerSentData(
   global.numMessagesPeerReceived = await getLengthOfChat(name, identity);
   sendOfflineSignal(peer, name, identity, global.numMessagesPeerReceived);
 
-  async function listener(event: Electron.IpcMainEvent, message) {
-    console.log("Listener for writing new data fired");
-    const log = formatMessageToStringifiedLog(
-      identity,
-      message,
-      global.numMessagesPeerReceived
-    );
-    const chatSessionPath = await buildChatDir(identity, name);
-    writeToFS(chatSessionPath, log);
-
+  async function listener(event: Electron.IpcMainEvent, message: string) {
     //Package as OnlineData
+    console.log("Listener to package online data fired");
     const onlineData: OnlineData = {
       type: "onlineData",
-      data: log,
+      data: message,
     };
-
     peer.send(JSON.stringify(onlineData)); //Send the client submitted message to the peer
-    event.reply("i_submitted_message", log); //Send the message back to the renderer process
   }
-  ipcMain.on("send_message_to_peer", listener);
+  ipcMain.on("attempt_to_send_online_message_to_peer", listener);
 }
 
 export async function handleRemotePeerSentData(
@@ -252,8 +242,8 @@ export function connect(
       handleOfflineMessages(peer, parsedData, identity, name);
     } else if (parsedData.type == "onlineData") {
       // const receivedLog = parsedData.data.toString("utf8");
-      const receivedLog = parsedData.data;
-
+      const receivedLog: string = parsedData.data;
+      console.log("the received log onData is " + receivedLog);
       //Write received messages to a different file...
       const chatSessionPath = await buildChatDir(name, identity);
       writeToFS(chatSessionPath, receivedLog);
@@ -267,7 +257,9 @@ export function connect(
     console.log("error", error);
   });
   peer.on("end", () => {
-    ipcMain.removeAllListeners("send_message_to_peer");
+    // ipcMain.removeAllListeners("send_message_to_peer");
+    ipcMain.removeAllListeners("attempt_to_send_online_message_to_peer");
+
     //After disconnecting, attempt to connect to this peer again
     connect(me, identity, name, initiator, friends, window);
     console.log("Disconnected!");

@@ -7,5 +7,6 @@ declare global {
   let hub: string;
   let testRandomChat: number;
   let numMessagesPeerReceived: number;
+  let newMessageToSignal: boolean;
 }
 export {};
