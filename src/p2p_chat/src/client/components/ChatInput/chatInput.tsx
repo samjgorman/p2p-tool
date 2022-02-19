@@ -17,10 +17,7 @@ async function handleMessage(
   };
 
   const payload = JSON.stringify(payload_object);
-
   window.Main.sendMessageToPeer(payload);
-  console.log("handler firing");
-  console.log(payload);
 }
 
 /**
