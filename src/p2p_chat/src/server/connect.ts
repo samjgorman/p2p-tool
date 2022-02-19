@@ -103,8 +103,8 @@ export async function handlePeerSentData(
     };
     peer.send(JSON.stringify(onlineData)); //Send the client submitted message to the peer
   }
-  ipcMain.once("attempt_to_send_online_message_to_peer", listener);
-  ipcMain.addListener("attempt_to_send_online_message_to_peer", listener);
+  ipcMain.on("attempt_to_send_online_message_to_peer", listener);
+  // ipcMain.addListener("attempt_to_send_online_message_to_peer", listener);
 }
 
 export async function handleRemotePeerSentData(
@@ -266,6 +266,7 @@ export function connect(
   peer.on("end", () => {
     // ipcMain.removeAllListeners("send_message_to_peer");
     ipcMain.removeAllListeners("attempt_to_send_online_message_to_peer");
+    ipcMain.removeAllListeners("send_message_to_peer");
 
     //After disconnecting, attempt to connect to this peer again
     connect(me, identity, name, initiator, friends, window);
