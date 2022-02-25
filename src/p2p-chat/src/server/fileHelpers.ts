@@ -32,16 +32,24 @@ export async function buildChatDir(
 ): Promise<string> {
   const chatSessionPath = await makeChatSessionPath(peer, remotePeer);
 
+  const remoteChatSessionPath = await makeChatSessionPath(remotePeer, peer);
+
   if (!(await fs.pathExists(chatSessionPath))) {
-    //TODO: check if opposite path exists too
-    console.log("Generating unique chat file." + chatSessionPath);
-    fs.open(chatSessionPath, "wx", function (err, fd) {
-      // The Wx flag creates an empty file async
-      console.error(err);
-      fs.close(fd, function (err) {
-        console.error(err);
+    if (!(await fs.pathExists(remoteChatSessionPath))) {
+      //TODO: check if opposite path exists too
+      console.log("Generating unique chat file." + chatSessionPath);
+      fs.open(chatSessionPath, "wx", function (err, fd) {
+        // The Wx flag creates an empty file async
+        if (err) {
+          console.log(err);
+        }
+        fs.close(fd, function (err) {
+          if (err) {
+            console.log(err);
+          }
+        });
       });
-    });
+    }
   }
   return chatSessionPath;
 }
