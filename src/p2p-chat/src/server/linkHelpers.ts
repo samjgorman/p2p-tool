@@ -4,8 +4,6 @@ import { getPublicKeyId, generateKeys } from "./keyHelpers";
 import { acceptHandshake } from "./accept";
 import { getAllFriends, getFriendsPath } from "./offlineChat";
 
-// const globalAny: any = global;
-
 /**
  * generateInviteLink is a helper function called by initiateHandshake that creates a protocol URL in the form
  * p2p://name=abc&invite=123. It then sends this inviteLink via IPC to the client to render.

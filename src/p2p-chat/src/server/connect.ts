@@ -31,7 +31,6 @@ const hub = signalhub("p2p-tool", [
   "https://evening-brook-96941.herokuapp.com/",
 ]);
 // global.hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
-// const globalAny: any = global;
 
 /**
  * constructPeer is a helper function that builds a new peer object
