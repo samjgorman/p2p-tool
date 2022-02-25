@@ -31,18 +31,22 @@ export async function buildChatDir(
   remotePeer: string
 ): Promise<string> {
   const chatSessionPath = await makeChatSessionPath(peer, remotePeer);
-
   if (!(await fs.pathExists(chatSessionPath))) {
-    //TODO: check if opposite path exists too
     console.log("Generating unique chat file." + chatSessionPath);
-    fs.open(chatSessionPath, "wx", function (err, fd) {
-      // The Wx flag creates an empty file async
-      console.error(err);
-      fs.close(fd, function (err) {
-        console.error(err);
+    try {
+      fs.open(chatSessionPath, "wx", function (err, fd) {
+        // The Wx flag creates an empty file async
+        if (!err) {
+          fs.close(fd, function (err) {
+            // if (err) throw err;
+          });
+        }
       });
-    });
+    } catch (err) {
+      console.log(err);
+    }
   }
+
   return chatSessionPath;
 }
 
@@ -57,9 +61,7 @@ export async function makeChatSessionPath(
   const dirName = peer + "_" + remotePeer;
   const chatPath = path.join(__dirname, "../../files", "chats", dirName);
   await fs.mkdirp(chatPath);
-  //TODO: Remove random num when done testing
   const fileName = peer + "_" + remotePeer + ".json";
-  // + global.testRandomChat.toString() +
   const chatSessionPath = path.join(chatPath, fileName);
 
   return chatSessionPath;
