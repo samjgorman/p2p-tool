@@ -31,6 +31,15 @@ If you encounter issues related to wrtc or node-gyp-build when installing, npm u
 ## Building from development to production
 WIP
 
+## Documentation
+Documentation generated from Typedoc is accessible from the docs folder. To update the documentation, run the following command...
+
+````
+npx typedoc
+````
+Typedoc compilation options are accessible in tsconfig.json under "typedocOptions".
+
+
 ## Notes
 This is an experimental tool in active development.  Bugs will likely be present and some degree of unpolish is inevitable.  P2P Tool is not yet recommended for use cases that require verifiably secure communication until the tool is in more development and independently verified. 
 
