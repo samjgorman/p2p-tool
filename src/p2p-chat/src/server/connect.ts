@@ -32,6 +32,8 @@ const hub = signalhub("p2p-tool", [
 ]);
 // global.hub = signalhub("p2p-tool", ["http://localhost:8080/"]);
 
+const globalAny: any = global;
+
 /**
  * constructPeer is a helper function that builds a new peer object
  * with a configured stun and turn server.
@@ -98,8 +100,8 @@ export async function handlePeerSentData(
 ) {
   console.log("Connected! " + identity + " to remote " + name);
   updateLastSeen(identity, name, window);
-  global.numMessagesPeerReceived = await getLengthOfChat(name, identity);
-  sendOfflineSignal(peer, name, identity, global.numMessagesPeerReceived);
+  globalAny.numMessagesPeerReceived = await getLengthOfChat(name, identity);
+  sendOfflineSignal(peer, name, identity, globalAny.numMessagesPeerReceived);
 
   async function listener(event: Electron.IpcMainEvent, message: string) {
     console.log("Listener to package online data fired");

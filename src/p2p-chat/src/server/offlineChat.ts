@@ -4,6 +4,7 @@ import fs from "fs-extra";
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
 import { Keys, FriendMetadata, FriendData } from "../shared/@types/types";
 import * as path from "path";
+const globalAny: any = global;
 
 /**
  * getFriendChatObject is a function that gets the chat history between a peer and remotePeer.
@@ -13,8 +14,11 @@ import * as path from "path";
  */
 export async function getFriendData(friendName: string): Promise<object> {
   const chatHistoryObject: Array<object> = [];
-  if (global.userName !== null) {
-    const candidateChatPath = await buildChatDir(global.userName, friendName);
+  if (globalAny.userName !== null) {
+    const candidateChatPath = await buildChatDir(
+      globalAny.userName,
+      friendName
+    );
     console.log("Candidate chat path is " + candidateChatPath);
     if (await fs.pathExists(candidateChatPath)) {
       //Read the file line by line into an array of objects

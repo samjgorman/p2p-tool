@@ -13,7 +13,15 @@
     "resolveJsonModule": true,
     "paths": {
       "*": ["node_modules/*"]
-    }
+    },
   },
-  "include": ["client/**/*", "electron/**/*", "server/**/*", "test/**/*"]
+  // "include": ["client/**/*", "electron/**/*", "server/**/*", "test/**/*", ],
+  "include": ["src/**/*", "electron/**/*", "server/**/*", "test/**/*", ],
+
+  "typedocOptions": {
+    "entryPointStrategy": "expand",
+    "entryPoints": ["./src"],
+    "out": "docs",
+
+}
 }
