@@ -9,8 +9,8 @@ export async function watchFilesInDir(dirPath: string) {
     // ignored: /(^|[\/\\])\../, // ignore dotfiles
     ignored: "**/*merged.json", // ignore dotfiles
     persistent: true,
-    usePolling: true,
-    interval: 100, //default is 100
+    // usePolling: true,
+    // interval: 100, //default is 100
   });
 
   //Construct a map of watched fileNamePaths to fileLen counts

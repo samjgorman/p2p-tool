@@ -1,10 +1,5 @@
 import readline from "readline";
-import {
-  writeToFS,
-  makeChatSessionPath,
-  getChatSessionPath,
-  makeMergedChatSessionPath,
-} from "./fileHelpers";
+import { writeToFS, makeMergedChatSessionPath } from "./fileHelpers";
 import fs from "fs-extra";
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
 import { Keys, FriendMetadata, FriendData } from "../shared/@types/types";

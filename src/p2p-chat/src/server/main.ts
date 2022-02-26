@@ -14,7 +14,7 @@ import {
 import { initiateHandshake } from "./invite";
 import { acceptHandshake } from "./accept";
 import { generateInviteLink, handleInviteLink } from "./linkHelpers";
-import { writeToFS, getChatSessionPath } from "./fileHelpers";
+import { writeToFS, getSentChatSessionPath } from "./fileHelpers";
 import { getPublicKeyId, generateKeys } from "./keyHelpers";
 import { formatMessageToStringifiedLog } from "./formatHelpers";
 
@@ -151,11 +151,9 @@ async function registerListeners(window: BrowserWindow) {
       payload.message,
       global.numMessagesPeerReceived
     );
-    const ifRemote = false;
-    const chatSessionPath = await getChatSessionPath(
+    const chatSessionPath = await getSentChatSessionPath(
       global.userName,
-      payload.recipient,
-      ifRemote
+      payload.recipient
     );
     console.log("Writing message to this path" + chatSessionPath);
     writeToFS(chatSessionPath, log);

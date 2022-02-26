@@ -80,17 +80,20 @@ export async function makeChatSessionPath(
   return chatSessionPath;
 }
 
-export async function getChatSessionPath(
+export async function getSentChatSessionPath(
   peer: string,
-  remotePeer: string,
-  isRemote: boolean
+  remotePeer: string
 ): Promise<string> {
   const chatDirPath = await buildChatD(remotePeer);
-  if (isRemote) {
-    return makeChatSessionPath(remotePeer, peer, chatDirPath);
-  } else {
-    return makeChatSessionPath(peer, remotePeer, chatDirPath);
-  }
+  return makeChatSessionPath(peer, remotePeer, chatDirPath);
+}
+
+export async function getReceivedChatSessionPath(
+  peer: string,
+  remotePeer: string
+): Promise<string> {
+  const chatDirPath = await buildChatD(remotePeer);
+  return makeChatSessionPath(remotePeer, peer, chatDirPath);
 }
 
 //Given a directory, gets the
@@ -124,17 +127,31 @@ export async function createFile(filePath: string) {
  * getLengthOfChat is a helper function that gets the length
  * of an append-only chat log given a peer & remote peer.
  */
-export async function getLengthOfChat(
+export async function getLengthOfSentChat(
   peer: string,
-  remotePeer: string,
-  ifRemote: boolean
+  remotePeer: string
 ): Promise<number> {
-  const chatSessionPath = await getChatSessionPath(peer, remotePeer, ifRemote);
-  //Read len of file...
-  console.log("file path about to be counted " + chatSessionPath);
+  const chatSessionPath = await getSentChatSessionPath(peer, remotePeer);
+  console.log("file path about to be counted in sent chat " + chatSessionPath);
   const fileLen = await getLengthOfChatGivenFilePath(chatSessionPath);
   console.log("stated file len" + fileLen);
+  return fileLen;
+}
 
+/**
+ * getLengthOfChat is a helper function that gets the length
+ * of an append-only chat log given a peer & remote peer.
+ */
+export async function getLengthOfReceivedChat(
+  peer: string,
+  remotePeer: string
+): Promise<number> {
+  const chatSessionPath = await getReceivedChatSessionPath(peer, remotePeer);
+  console.log(
+    "file path about to be counted in received chat " + chatSessionPath
+  );
+  const fileLen = await getLengthOfChatGivenFilePath(chatSessionPath);
+  console.log("stated file len" + fileLen);
   return fileLen;
 }
 
@@ -168,15 +185,21 @@ export function numOfflineMessagesToBeSent(
   return dif;
 }
 
+/**
+ *
+ * @param peer
+ * @param remotePeer
+ * @param dif
+ * @param numPeerSent
+ * @returns
+ */
 export async function getChatMessagesSentOffline(
   peer: string,
   remotePeer: string,
   dif: number,
   numPeerSent: number
 ) {
-  const ifRemote = false;
-  const chatSessionPath = await getChatSessionPath(peer, remotePeer, ifRemote);
-
+  const chatSessionPath = await getSentChatSessionPath(peer, remotePeer);
   //Get lines from numPeerSent - dif to numPeerSent
   //Ex) numPeerSent = 10, dif = 2, get chat messages from 8 to 10...
   const start = numPeerSent - dif;

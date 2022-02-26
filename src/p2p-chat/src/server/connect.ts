@@ -18,8 +18,10 @@ import {
   writeToFS,
   buildMergeFile,
   populateChatDir,
-  getChatSessionPath,
-  getLengthOfChat,
+  getSentChatSessionPath,
+  getReceivedChatSessionPath,
+  getLengthOfSentChat,
+  getLengthOfReceivedChat,
   numOfflineMessagesToBeSent,
   getChatMessagesSentOffline,
 } from "./fileHelpers";
@@ -101,11 +103,9 @@ export async function handlePeerSentData(
   console.log("Connected! " + identity + " to remote " + name);
   populateChatDir(identity, name); //Construct and populate a chat dir with sent, received, and merge logs
   updateLastSeen(identity, name, window);
-  const ifRemote = false;
-  global.numMessagesPeerReceived = await getLengthOfChat(
+  global.numMessagesPeerReceived = await getLengthOfReceivedChat(
     identity,
-    name,
-    ifRemote
+    name
   );
   console.log(
     "Peer sending data and numMessages in its received is " +
@@ -145,11 +145,9 @@ export async function handleRemotePeerSentData(
     handleOfflineMessages(peer, parsedData, identity, name);
   } else if (parsedData.type == "onlineData") {
     const receivedLog: string = parsedData.data;
-    const ifRemote = true;
-    const receivedChatSessionPath = await getChatSessionPath(
+    const receivedChatSessionPath = await getReceivedChatSessionPath(
       identity,
-      name,
-      ifRemote
+      name
     );
     writeToFS(receivedChatSessionPath, receivedLog);
     window.webContents.send("peer_submitted_message", receivedLog);
@@ -178,8 +176,7 @@ export async function handleOfflineMessages(
 ) {
   //Construct an array of objects
   const numRemotePeerReceivedLog = receivedData.numMessagesPeerReceived;
-  const ifRemote = false;
-  const numPeerSentLog = await getLengthOfChat(identity, name, false);
+  const numPeerSentLog = await getLengthOfSentChat(identity, name);
   console.log("numPeerSentLog is " + numPeerSentLog);
   const dif = numOfflineMessagesToBeSent(
     numPeerSentLog,
