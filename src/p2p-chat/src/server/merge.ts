@@ -21,23 +21,27 @@ export async function watchFilesInDir(dirPath: string) {
   watcher
     .on("add", async (pathName) => {
       log(`File ${pathName} has been added`);
-      // const fileLen = await getLengthOfChatGivenFilePath(pathName);
-      // fileCounts[pathName] = fileLen;
+      const fileLen = await getLengthOfChatGivenFilePath(pathName);
+      fileCounts[pathName] = fileLen;
     })
     .on("change", async (pathName) => {
       log(`File ${pathName} has been changed`);
       //Get the line count of the changed file
-      // const currFileLen = await getLengthOfChatGivenFilePath(pathName);
-      // const pastFileLen = fileCounts[pathName];
-      // let diff = 1;
-      // if (currFileLen > pastFileLen) {
-      //   diff = currFileLen - pastFileLen;
-      // }
-      // fileCounts[pathName] = currFileLen;
+      const currFileLen = await getLengthOfChatGivenFilePath(pathName);
+      console.log("In watcher currFileLen" + currFileLen);
+
+      const pastFileLen = fileCounts[pathName];
+      console.log("In watcher pastFileLen" + pastFileLen);
+
+      let diff = 1;
+      if (currFileLen > pastFileLen) {
+        diff = currFileLen - pastFileLen;
+      }
+      fileCounts[pathName] = currFileLen;
 
       //Get the most recent line changed...
       readLastLines
-        .read(pathName, 1)
+        .read(pathName, diff)
         .then(async (lines) => {
           console.log(lines.trim());
           const dirName = path.dirname(pathName);
