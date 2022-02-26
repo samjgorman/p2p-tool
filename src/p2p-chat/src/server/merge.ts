@@ -1,11 +1,13 @@
-import * as path from "path";
 import fs from "fs-extra";
 import chokidar from "chokidar";
 import readLastLines from "read-last-lines";
+import * as path from "path";
+import { writeToFS } from "./fileHelpers";
 
 export async function watchFilesInDir(dirPath: string) {
   const watcher = chokidar.watch(dirPath, {
-    ignored: /(^|[\/\\])\../, // ignore dotfiles
+    // ignored: /(^|[\/\\])\../, // ignore dotfiles
+    ignored: "**/*merged.json", // ignore dotfiles
     persistent: true,
   });
 
@@ -14,15 +16,32 @@ export async function watchFilesInDir(dirPath: string) {
   const log = console.log.bind(console);
   // Add event listeners.
   watcher
-    .on("add", (path) => log(`File ${path} has been added`))
-    .on("change", async (path) => {
-      log(`File ${path} has been changed`);
+    .on("add", (pathName) => log(`File ${pathName} has been added`))
+    .on("change", async (pathName) => {
+      log(`File ${pathName} has been changed`);
       //Get the most recent line changed...
-      readLastLines.read(path, 1).then((lines) => {
-        console.log(lines);
-        //Write this line to the appropriate merge file...
-      });
+      readLastLines
+        .read(pathName, 1)
+        .then(async (lines) => {
+          //Get the directory of this path
+          const dirName = path.dirname(pathName);
+          //Write this line to the appropriate merge file...
+          const mergeFilePath = path.join(
+            __dirname,
+            "../../",
+            dirName,
+            "merged.json"
+          );
+          console.log(lines.trim());
+          console.log(typeof lines);
+          console.log(mergeFilePath);
+          await writeToFS(mergeFilePath, lines.trim());
+        })
+
+        .catch((err) => {
+          console.log(err);
+        });
     })
 
-    .on("unlink", (path) => log(`File ${path} has been removed`));
+    .on("unlink", (pathName) => log(`File ${pathName} has been removed`));
 }
