@@ -182,8 +182,6 @@ export async function handleOfflineMessages(
         type: "onlineData",
         data: JSON.stringify(chatMessage),
       };
-      const delay = (ms) => new Promise((res) => setTimeout(res, ms));
-      await delay(50);
       peer.send(JSON.stringify(onlineData));
     }
   }

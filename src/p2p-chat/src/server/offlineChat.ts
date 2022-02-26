@@ -40,8 +40,12 @@ export async function getFriendData(friendName: string): Promise<object> {
       };
       return friendData;
     } else {
+      const friendData: FriendData = {
+        friendName: friendName,
+        chatHistory: [],
+      };
       console.log("No chat history yet");
-      return {};
+      return friendData;
     }
   } else {
     console.error("Identity not yet established");

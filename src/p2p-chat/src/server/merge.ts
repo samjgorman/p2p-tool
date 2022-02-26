@@ -10,7 +10,7 @@ export async function watchFilesInDir(dirPath: string) {
     ignored: "**/*merged.json", // ignore dotfiles
     persistent: true,
     usePolling: true,
-    interval: 1, //default is 100
+    interval: 50, //default is 100
   });
 
   //Listen for changes to a file...
@@ -32,7 +32,6 @@ export async function watchFilesInDir(dirPath: string) {
             dirName,
             "merged.json"
           );
-
           await writeToFS(mergeFilePath, lines.trim());
         })
 
