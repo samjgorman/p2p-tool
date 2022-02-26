@@ -10,7 +10,7 @@ export async function watchFilesInDir(dirPath: string) {
     ignored: "**/*merged.json", // ignore dotfiles
     persistent: true,
     usePolling: true,
-    interval: 50, //default is 100
+    interval: 100, //default is 100
   });
 
   //Construct a map of watched fileNamePaths to fileLen counts
@@ -21,23 +21,23 @@ export async function watchFilesInDir(dirPath: string) {
   watcher
     .on("add", async (pathName) => {
       log(`File ${pathName} has been added`);
-      const fileLen = await getLengthOfChatGivenFilePath(pathName);
-      fileCounts[pathName] = fileLen;
+      // const fileLen = await getLengthOfChatGivenFilePath(pathName);
+      // fileCounts[pathName] = fileLen;
     })
     .on("change", async (pathName) => {
       log(`File ${pathName} has been changed`);
       //Get the line count of the changed file
-      const currFileLen = await getLengthOfChatGivenFilePath(pathName);
-      const pastFileLen = fileCounts[pathName];
-      let diff = 1;
-      if (currFileLen > pastFileLen) {
-        diff = currFileLen - pastFileLen;
-      }
-      fileCounts[pathName] = currFileLen;
+      // const currFileLen = await getLengthOfChatGivenFilePath(pathName);
+      // const pastFileLen = fileCounts[pathName];
+      // let diff = 1;
+      // if (currFileLen > pastFileLen) {
+      //   diff = currFileLen - pastFileLen;
+      // }
+      // fileCounts[pathName] = currFileLen;
 
       //Get the most recent line changed...
       readLastLines
-        .read(pathName, diff)
+        .read(pathName, 1)
         .then(async (lines) => {
           console.log(lines.trim());
           const dirName = path.dirname(pathName);

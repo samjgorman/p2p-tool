@@ -101,8 +101,16 @@ export async function handlePeerSentData(
   console.log("Connected! " + identity + " to remote " + name);
   populateChatDir(identity, name); //Construct and populate a chat dir with sent, received, and merge logs
   updateLastSeen(identity, name, window);
-  global.numMessagesPeerReceived = await getLengthOfChat(identity, name);
-
+  const ifRemote = false;
+  global.numMessagesPeerReceived = await getLengthOfChat(
+    identity,
+    name,
+    ifRemote
+  );
+  console.log(
+    "Peer sending data and numMessages in its received is " +
+      global.numMessagesPeerReceived
+  );
   sendOfflineSignal(peer, name, identity, global.numMessagesPeerReceived);
 
   async function listener(event: Electron.IpcMainEvent, message: string) {
@@ -138,9 +146,12 @@ export async function handleRemotePeerSentData(
   } else if (parsedData.type == "onlineData") {
     const receivedLog: string = parsedData.data;
     const ifRemote = true;
-    const chatSessionPath = await getChatSessionPath(identity, name, ifRemote);
-
-    writeToFS(chatSessionPath, receivedLog);
+    const receivedChatSessionPath = await getChatSessionPath(
+      identity,
+      name,
+      ifRemote
+    );
+    writeToFS(receivedChatSessionPath, receivedLog);
     window.webContents.send("peer_submitted_message", receivedLog);
   }
 }
@@ -167,7 +178,8 @@ export async function handleOfflineMessages(
 ) {
   //Construct an array of objects
   const numRemotePeerReceivedLog = receivedData.numMessagesPeerReceived;
-  const numPeerSentLog = await getLengthOfChat(identity, name);
+  const ifRemote = false;
+  const numPeerSentLog = await getLengthOfChat(identity, name, false);
   console.log("numPeerSentLog is " + numPeerSentLog);
   const dif = numOfflineMessagesToBeSent(
     numPeerSentLog,

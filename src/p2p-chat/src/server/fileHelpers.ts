@@ -126,12 +126,16 @@ export async function createFile(filePath: string) {
  */
 export async function getLengthOfChat(
   peer: string,
-  remotePeer: string
+  remotePeer: string,
+  ifRemote: boolean
 ): Promise<number> {
-  const ifRemote = true; //Check this...
   const chatSessionPath = await getChatSessionPath(peer, remotePeer, ifRemote);
   //Read len of file...
-  return getLengthOfChatGivenFilePath(chatSessionPath);
+  console.log("file path about to be counted " + chatSessionPath);
+  const fileLen = await getLengthOfChatGivenFilePath(chatSessionPath);
+  console.log("stated file len" + fileLen);
+
+  return fileLen;
 }
 
 export async function getLengthOfChatGivenFilePath(filePath: string) {

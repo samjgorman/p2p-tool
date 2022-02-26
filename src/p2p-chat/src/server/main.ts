@@ -157,6 +157,7 @@ async function registerListeners(window: BrowserWindow) {
       payload.recipient,
       ifRemote
     );
+    console.log("Writing message to this path" + chatSessionPath);
     writeToFS(chatSessionPath, log);
 
     //Attempt to send the message to the remote peer
