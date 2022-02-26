@@ -16,8 +16,12 @@ import {
 
 import {
   writeToFS,
-  buildChatDir,
-  getLengthOfChat,
+  buildMergeFile,
+  populateChatDir,
+  getSentChatSessionPath,
+  getReceivedChatSessionPath,
+  getLengthOfSentChat,
+  getLengthOfReceivedChat,
   numOfflineMessagesToBeSent,
   getChatMessagesSentOffline,
 } from "./fileHelpers";
@@ -97,8 +101,16 @@ export async function handlePeerSentData(
   window: BrowserWindow
 ) {
   console.log("Connected! " + identity + " to remote " + name);
+  populateChatDir(identity, name); //Construct and populate a chat dir with sent, received, and merge logs
   updateLastSeen(identity, name, window);
-  global.numMessagesPeerReceived = await getLengthOfChat(name, identity);
+  global.numMessagesPeerReceived = await getLengthOfReceivedChat(
+    identity,
+    name
+  );
+  console.log(
+    "Peer sending data and numMessages in its received is " +
+      global.numMessagesPeerReceived
+  );
   sendOfflineSignal(peer, name, identity, global.numMessagesPeerReceived);
 
   async function listener(event: Electron.IpcMainEvent, message: string) {
@@ -133,8 +145,11 @@ export async function handleRemotePeerSentData(
     handleOfflineMessages(peer, parsedData, identity, name);
   } else if (parsedData.type == "onlineData") {
     const receivedLog: string = parsedData.data;
-    const chatSessionPath = await buildChatDir(name, identity);
-    writeToFS(chatSessionPath, receivedLog);
+    const receivedChatSessionPath = await getReceivedChatSessionPath(
+      identity,
+      name
+    );
+    writeToFS(receivedChatSessionPath, receivedLog);
     window.webContents.send("peer_submitted_message", receivedLog);
   }
 }
@@ -161,7 +176,7 @@ export async function handleOfflineMessages(
 ) {
   //Construct an array of objects
   const numRemotePeerReceivedLog = receivedData.numMessagesPeerReceived;
-  const numPeerSentLog = await getLengthOfChat(identity, name);
+  const numPeerSentLog = await getLengthOfSentChat(identity, name);
   console.log("numPeerSentLog is " + numPeerSentLog);
   const dif = numOfflineMessagesToBeSent(
     numPeerSentLog,
@@ -176,7 +191,6 @@ export async function handleOfflineMessages(
         type: "onlineData",
         data: JSON.stringify(chatMessage),
       };
-
       peer.send(JSON.stringify(onlineData));
     }
   }

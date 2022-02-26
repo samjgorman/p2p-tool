@@ -48,7 +48,8 @@ function Chat() {
       setFriendReceived(true);
       setFriendName(event.friendName);
       setFriendChatObject(event.chatHistory);
-      if (Object.entries(event.chatHistory).length !== 0) {
+      //Check if empty
+      if (event.chatHistory && Object.entries(event.chatHistory).length !== 0) {
         setFriendChatObjectReceived(true);
       }
     });

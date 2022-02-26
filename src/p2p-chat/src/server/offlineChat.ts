@@ -1,5 +1,5 @@
 import readline from "readline";
-import { writeToFS, buildChatDir } from "./fileHelpers";
+import { writeToFS, makeMergedChatSessionPath } from "./fileHelpers";
 import fs from "fs-extra";
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
 import { Keys, FriendMetadata, FriendData } from "../shared/@types/types";
@@ -14,7 +14,7 @@ import * as path from "path";
 export async function getFriendData(friendName: string): Promise<object> {
   const chatHistoryObject: Array<object> = [];
   if (global.userName) {
-    const candidateChatPath = await buildChatDir(global.userName, friendName);
+    const candidateChatPath = await makeMergedChatSessionPath(friendName);
     console.log("Candidate chat path is " + candidateChatPath);
     if (await fs.pathExists(candidateChatPath)) {
       //Read the file line by line into an array of objects
@@ -35,8 +35,12 @@ export async function getFriendData(friendName: string): Promise<object> {
       };
       return friendData;
     } else {
+      const friendData: FriendData = {
+        friendName: friendName,
+        chatHistory: [],
+      };
       console.log("No chat history yet");
-      return {};
+      return friendData;
     }
   } else {
     console.error("Identity not yet established");
