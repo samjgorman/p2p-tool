@@ -128,12 +128,17 @@ export async function getLengthOfChat(
   peer: string,
   remotePeer: string
 ): Promise<number> {
-  let lineCount = 0;
   const ifRemote = true; //Check this...
   const chatSessionPath = await getChatSessionPath(peer, remotePeer, ifRemote);
   //Read len of file...
-  if (await fs.pathExists(chatSessionPath)) {
-    const fileStream = fs.createReadStream(chatSessionPath);
+  return getLengthOfChatGivenFilePath(chatSessionPath);
+}
+
+export async function getLengthOfChatGivenFilePath(filePath: string) {
+  let lineCount = 0;
+
+  if (await fs.pathExists(filePath)) {
+    const fileStream = fs.createReadStream(filePath);
     const rl = readline.createInterface({
       input: fileStream,
       crlfDelay: Infinity,
