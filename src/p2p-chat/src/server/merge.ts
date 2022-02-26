@@ -4,20 +4,25 @@ import readLastLines from "read-last-lines";
 import * as path from "path";
 import { writeToFS, getLengthOfChatGivenFilePath } from "./fileHelpers";
 
+/**
+ * watchFilesInDir handles watching chat files for changes, listens for updates to
+ * chat files, then writes these updates to appropriate merged.json files. Called once upon user sign in.
+ *
+ * The function maintains an internal map of fileNamePaths to fileLength counts,
+ * and writes the dif of the currentFileLength - pastFileLength to merged.json.
+ * @param dirPath
+ */
 export async function watchFilesInDir(dirPath: string) {
   const watcher = chokidar.watch(dirPath, {
-    // ignored: /(^|[\/\\])\../, // ignore dotfiles
     ignored: "**/*merged.json", // ignore dotfiles
     persistent: true,
-    // usePolling: true,
-    // interval: 100, //default is 100
   });
 
   //Construct a map of watched fileNamePaths to fileLen counts
-  const fileCounts = new Map();
+  const fileCounts: Map<string, number> = new Map();
   //Listen for changes to a file...
   const log = console.log.bind(console);
-  // Add event listeners.
+
   watcher
     .on("add", async (pathName) => {
       log(`File ${pathName} has been added`);
@@ -28,18 +33,13 @@ export async function watchFilesInDir(dirPath: string) {
       log(`File ${pathName} has been changed`);
       //Get the line count of the changed file
       const currFileLen = await getLengthOfChatGivenFilePath(pathName);
-      console.log("In watcher currFileLen" + currFileLen);
-
       const pastFileLen = fileCounts[pathName];
-      console.log("In watcher pastFileLen" + pastFileLen);
-
       let diff = 1;
       if (currFileLen > pastFileLen) {
         diff = currFileLen - pastFileLen;
       }
       fileCounts[pathName] = currFileLen;
 
-      //Get the most recent line changed...
       readLastLines
         .read(pathName, diff)
         .then(async (lines) => {

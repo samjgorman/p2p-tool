@@ -140,9 +140,7 @@ async function registerListeners(window: BrowserWindow) {
 
   ipcMain.on("send_message_to_peer", async (event, message) => {
     console.log("Listener for writing new data fired");
-
     const payload: MessageData = JSON.parse(message);
-
     console.log(payload);
     console.log(payload.recipient);
 
@@ -155,7 +153,6 @@ async function registerListeners(window: BrowserWindow) {
       global.userName,
       payload.recipient
     );
-    console.log("Writing message to this path" + chatSessionPath);
     writeToFS(chatSessionPath, log);
 
     //Attempt to send the message to the remote peer
