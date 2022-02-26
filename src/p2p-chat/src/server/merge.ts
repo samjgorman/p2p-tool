@@ -9,10 +9,11 @@ export async function watchFilesInDir(dirPath: string) {
     // ignored: /(^|[\/\\])\../, // ignore dotfiles
     ignored: "**/*merged.json", // ignore dotfiles
     persistent: true,
+    usePolling: true,
+    interval: 1, //default is 100
   });
 
   //Listen for changes to a file...
-  // Something to use when events are received.
   const log = console.log.bind(console);
   // Add event listeners.
   watcher
@@ -23,18 +24,15 @@ export async function watchFilesInDir(dirPath: string) {
       readLastLines
         .read(pathName, 1)
         .then(async (lines) => {
-          //Get the directory of this path
+          console.log(lines.trim());
           const dirName = path.dirname(pathName);
-          //Write this line to the appropriate merge file...
           const mergeFilePath = path.join(
             __dirname,
             "../../",
             dirName,
             "merged.json"
           );
-          console.log(lines.trim());
-          console.log(typeof lines);
-          console.log(mergeFilePath);
+
           await writeToFS(mergeFilePath, lines.trim());
         })
 

@@ -94,8 +94,6 @@ export async function getChatSessionPath(
 }
 
 //Given a directory, gets the
-export async function getMergeFilePath(fileNamePath: string) {}
-
 export async function makeMergedChatSessionPath(remotePeer: string) {
   const dirName = remotePeer;
   const chatPath = path.join(__dirname, "../../files", "chats", dirName);

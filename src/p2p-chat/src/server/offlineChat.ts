@@ -3,6 +3,7 @@ import {
   writeToFS,
   makeChatSessionPath,
   getChatSessionPath,
+  makeMergedChatSessionPath,
 } from "./fileHelpers";
 import fs from "fs-extra";
 import { app, BrowserWindow, ipcMain, protocol, dialog } from "electron";
@@ -18,13 +19,7 @@ import * as path from "path";
 export async function getFriendData(friendName: string): Promise<object> {
   const chatHistoryObject: Array<object> = [];
   if (global.userName) {
-    // const candidateChatPath = await buildChatDir(global.userName, friendName);
-    const ifRemote = false;
-    const candidateChatPath = await getChatSessionPath(
-      global.userName,
-      friendName,
-      ifRemote
-    );
+    const candidateChatPath = await makeMergedChatSessionPath(friendName);
     console.log("Candidate chat path is " + candidateChatPath);
     if (await fs.pathExists(candidateChatPath)) {
       //Read the file line by line into an array of objects
