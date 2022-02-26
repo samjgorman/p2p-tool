@@ -101,7 +101,9 @@ export async function handlePeerSentData(
   console.log("Connected! " + identity + " to remote " + name);
   populateChatDir(identity, name); //Construct and populate a chat dir with sent, received, and merge logs
   updateLastSeen(identity, name, window);
-  global.numMessagesPeerReceived = await getLengthOfChat(name, identity);
+  // global.numMessagesPeerReceived = await getLengthOfChat(name, identity);
+  global.numMessagesPeerReceived = await getLengthOfChat(identity, name);
+
   sendOfflineSignal(peer, name, identity, global.numMessagesPeerReceived);
 
   async function listener(event: Electron.IpcMainEvent, message: string) {

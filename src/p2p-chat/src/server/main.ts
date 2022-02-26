@@ -94,7 +94,7 @@ async function establishConnection(
 
   //Listen to any chat files in chat
   const pathToChat = "./files/chats";
-  watchFilesInDir(pathToChat);
+  // watchFilesInDir(pathToChat);
 
   if (initiator) {
     const recipient = peerMetadataObj.data.recipient;

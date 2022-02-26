@@ -128,7 +128,7 @@ export async function getLengthOfChat(
   remotePeer: string
 ): Promise<number> {
   let lineCount = 0;
-  const ifRemote = false;
+  const ifRemote = true; //Check this...
   const chatSessionPath = await getChatSessionPath(peer, remotePeer, ifRemote);
   //Read len of file...
   if (await fs.pathExists(chatSessionPath)) {
