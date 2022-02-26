@@ -16,7 +16,9 @@ import {
 
 import {
   writeToFS,
-  buildChatDir,
+  buildMergeFile,
+  populateChatDir,
+  getChatSessionPath,
   getLengthOfChat,
   numOfflineMessagesToBeSent,
   getChatMessagesSentOffline,
@@ -97,6 +99,7 @@ export async function handlePeerSentData(
   window: BrowserWindow
 ) {
   console.log("Connected! " + identity + " to remote " + name);
+  populateChatDir(identity, name); //Construct and populate a chat dir with sent, received, and merge logs
   updateLastSeen(identity, name, window);
   global.numMessagesPeerReceived = await getLengthOfChat(name, identity);
   sendOfflineSignal(peer, name, identity, global.numMessagesPeerReceived);
@@ -133,7 +136,9 @@ export async function handleRemotePeerSentData(
     handleOfflineMessages(peer, parsedData, identity, name);
   } else if (parsedData.type == "onlineData") {
     const receivedLog: string = parsedData.data;
-    const chatSessionPath = await buildChatDir(name, identity);
+    const ifRemote = true;
+    const chatSessionPath = await getChatSessionPath(identity, name, ifRemote);
+
     writeToFS(chatSessionPath, receivedLog);
     window.webContents.send("peer_submitted_message", receivedLog);
   }
