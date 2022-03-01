@@ -32,7 +32,7 @@ If you encounter issues related to wrtc or node-gyp-build when installing, npm u
 WIP
 
 ## Documentation
-Documentation generated from Typedoc is accessible from the docs folder. To update the documentation, run the following command...
+Documentation generated from Typedoc is accessible from the docs folder. To generate and or update the documentation, run the following command...
 
 ````
 npx typedoc
