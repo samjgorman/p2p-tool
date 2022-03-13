@@ -1,4 +1,4 @@
-import { Container, Text, Sidebar, SidebarContainer, Main } from "./styles";
+import { Container, Text, Sidebar, Main } from "./styles";
 import Chat from "../Chat/chat";
 import Connect from "../Connect/connect";
 import FriendsList from "../Friends/friendsList";
@@ -11,12 +11,10 @@ import React from "react";
 export function MainContainer() {
   return (
     <Container>
-      {/* <SidebarContainer> */}
       <Sidebar>
         <Text>P2P Chat Demo</Text>
         <FriendsList />
       </Sidebar>
-      {/* </SidebarContainer> */}
       <Main>
         <Connect />
         <Chat />

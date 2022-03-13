@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { FriendMetadata } from "../../../shared/@types/types";
+import {
+  FriendContainer,
+  FriendName,
+  FriendLastSeen,
+} from "./friendsListStyling";
 
 /**
  * Simple functional component to render a friend object,
@@ -20,15 +25,11 @@ function FriendObject(props) {
   );
 
   return (
-    <div
-      className="FriendObjectContainer"
-      onClick={() => handleFriend(props.name)}
-    >
-      <div className="FriendObjectName">{props.name}</div>
-      <div className="FriendObjectLastSeen">
-        {props.lastSeen === "" ? "Offline" : readableLastSeen}
-      </div>
-    </div>
+    <FriendContainer onClick={() => handleFriend(props.name)}>
+      <FriendName>{props.name}</FriendName>
+      <FriendLastSeen></FriendLastSeen>
+      {props.lastSeen === "" ? "Offline" : readableLastSeen}
+    </FriendContainer>
   );
 }
 

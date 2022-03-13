@@ -12,15 +12,7 @@ export const Sidebar = styled.div`
   padding-left: 5%;
   flex-direction: column;
   background-color: #f3f3f3;
-  padding-right: 10%;
-`;
-
-export const SidebarContainer = styled.div`
-  position: fixed;
-  background-color: #f3f3f3;
-  padding-right: 10%;
-  height: 100%;
-  margin-left: 0px;
+  padding-right: 6%;
 `;
 
 export const Main = styled.div`
@@ -34,4 +26,6 @@ export const Text = styled.p`
   margin-top: 24px;
   font-size: 18px;
   font-weight: 800;
+  width: 200px;
 `;
+//Width 200 workaround to create flex div Sidebar of adequate size
