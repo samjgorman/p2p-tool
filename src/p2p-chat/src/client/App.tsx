@@ -1,4 +1,4 @@
-// import { GlobalStyle } from './styles/GlobalStyle'
+import { GlobalStyle } from "./styles/GlobalStyle";
 
 import { MainContainer } from "./components/MainContainer/mainContainer";
 import React from "react";
@@ -6,7 +6,7 @@ import React from "react";
 export function App() {
   return (
     <>
-      {/* <GlobalStyle /> */}
+      <GlobalStyle />
       <MainContainer />
     </>
   );
