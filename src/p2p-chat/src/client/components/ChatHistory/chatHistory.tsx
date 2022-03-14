@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import ChatMessage from "../ChatMessage/message";
-import { ChatHistoryContainer } from "./chatHistoryStyling";
+import { ChatHistoryWrapper, ChatHistoryContainer } from "./chatHistoryStyling";
 
 /**
  * Stateful container that renders the chat log of a given friend.
@@ -11,14 +11,16 @@ function ChatHistory(props) {
 
   return (
     <ChatHistoryContainer>
-      {chatHistory.map((chatMessage, i) => (
-        <ChatMessage
-          key={i}
-          chatMessage={chatMessage.message}
-          timestamp={chatMessage.timestamp}
-          sender={chatMessage.sender}
-        />
-      ))}
+      <ChatHistoryWrapper>
+        {chatHistory.map((chatMessage, i) => (
+          <ChatMessage
+            key={i}
+            chatMessage={chatMessage.message}
+            timestamp={chatMessage.timestamp}
+            sender={chatMessage.sender}
+          />
+        ))}
+      </ChatHistoryWrapper>
     </ChatHistoryContainer>
   );
 }

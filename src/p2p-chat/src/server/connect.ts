@@ -150,7 +150,6 @@ export async function handleRemotePeerSentData(
       name
     );
     writeToFS(receivedChatSessionPath, receivedLog);
-    window.webContents.send("peer_submitted_message", receivedLog);
   }
 }
 

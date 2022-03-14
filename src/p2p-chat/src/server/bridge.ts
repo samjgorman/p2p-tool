@@ -34,6 +34,13 @@ export const api = {
   attemptToSendToPeer: (message: string) => {
     ipcRenderer.send("attempt_to_send_online_message_to_peer", message);
   },
+  getChatHistory: (friendName: string) => {
+    ipcRenderer.send("get_chat_history", friendName);
+  },
+
+  sendChatHistory: (message: string) => {
+    ipcRenderer.send("get_chat_history", message);
+  },
   /**
    * Provide an easier way to listen to events
    */

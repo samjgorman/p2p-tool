@@ -94,7 +94,7 @@ async function establishConnection(
 
   //Listen to any chat files in chat
   const pathToChat = "./files/chats";
-  watchFilesInDir(pathToChat);
+  watchFilesInDir(pathToChat, window);
 
   if (initiator) {
     const recipient = peerMetadataObj.data.recipient;
@@ -138,6 +138,12 @@ async function registerListeners(window: BrowserWindow) {
     event.reply("friend_data_sent", friendData);
   });
 
+  ipcMain.on("get_chat_history", async (event, message) => {
+    console.log("Request for getting chat history registered" + message);
+    const friendData = await getFriendData(message);
+    event.reply("friend_data_sent", friendData);
+  });
+
   ipcMain.on("send_message_to_peer", async (event, message) => {
     console.log("Listener for writing new data fired");
     const payload: MessageData = JSON.parse(message);
@@ -155,8 +161,8 @@ async function registerListeners(window: BrowserWindow) {
     );
     writeToFS(chatSessionPath, log);
 
-    //Attempt to send the message to the remote peer
-    event.reply("i_submitted_message", log); //Send the message back to the renderer process
+    //Get the updated chat object
+    event.reply("get_friend_data", log); //Send the message back to the renderer process
   });
 }
 
