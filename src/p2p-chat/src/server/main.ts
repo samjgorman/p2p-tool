@@ -156,6 +156,9 @@ async function registerListeners(window: BrowserWindow) {
       payload.recipient
     );
     writeToFS(chatSessionPath, log);
+
+    //Send message to IPC Renderer
+    window.webContents.send("send_message_from_client", log);
   });
 }
 

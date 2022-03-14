@@ -35,9 +35,17 @@ function Chat() {
       }
     });
 
+    window.Main.on("send_message_from_client", (event, arg) => {
+      console.log("Chat object received");
+      console.log(event);
+      //Attempt to send a signal
+      window.Main.attemptToSendToPeer(event);
+    });
+
     return function cleanup() {
       window.Main.removeAllListeners("send_chat_history");
       window.Main.removeAllListeners("update_chat_history");
+      window.Main.removeAllListeners("send_message_from_client");
     };
   });
 
