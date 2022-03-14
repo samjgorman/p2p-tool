@@ -119,6 +119,8 @@ export async function handlePeerSentData(
       type: "onlineData",
       data: message,
     };
+    console.log("msg about to be sent");
+    console.log(onlineData);
     peer.send(JSON.stringify(onlineData)); //Send the client submitted message to the peer
   }
   ipcMain.on("attempt_to_send_online_message_to_peer", listener);
