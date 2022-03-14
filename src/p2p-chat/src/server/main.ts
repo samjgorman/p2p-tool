@@ -132,16 +132,11 @@ async function registerListeners(window: BrowserWindow) {
     establishConnection(window, message);
   });
 
-  ipcMain.on("get_friend_data", async (event, message) => {
-    console.log("Request for getting friend chat object registered" + message);
-    const friendData = await getFriendData(message);
-    event.reply("friend_data_sent", friendData);
-  });
-
   ipcMain.on("get_chat_history", async (event, message) => {
     console.log("Request for getting chat history registered" + message);
     const friendData = await getFriendData(message);
-    event.reply("friend_data_sent", friendData);
+    // event.reply("send_chat_history", friendData);
+    window.webContents.send("send_chat_history", friendData);
   });
 
   ipcMain.on("send_message_to_peer", async (event, message) => {
@@ -162,7 +157,7 @@ async function registerListeners(window: BrowserWindow) {
     writeToFS(chatSessionPath, log);
 
     //Get the updated chat object
-    event.reply("get_friend_data", log); //Send the message back to the renderer process
+    // event.reply("get_chat_history", log); //Send the message back to the renderer process
   });
 }
 
@@ -201,6 +196,8 @@ app.on("window-all-closed", () => {
 
 app.on("quit", () => {
   ipcMain.removeAllListeners("send_message_to_peer");
+  ipcMain.removeAllListeners("send_peer_metadata");
+  ipcMain.removeAllListeners("get_chat_history");
   ipcMain.removeAllListeners("attempt_to_send_online_message_to_peer");
 });
 

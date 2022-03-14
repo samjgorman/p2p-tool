@@ -55,7 +55,7 @@ export async function watchFilesInDir(dirPath: string, window: BrowserWindow) {
           await writeToFS(mergeFilePath, lines.trim());
           //Notify client that changes exist to rerender...
           const message = "Chat history updated";
-          window.webContents.send("send_chat_history", message);
+          window.webContents.send("update_chat_history", message);
         })
 
         .catch((err) => {

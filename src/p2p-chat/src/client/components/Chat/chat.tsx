@@ -17,12 +17,13 @@ function Chat() {
     useState(false);
 
   useLayoutEffect(() => {
-    window.Main.on("send_chat_history", (event: string, arg) => {
+    window.Main.on("update_chat_history", (event: string, arg) => {
+      console.log("request to update registered");
       console.log(event);
       window.Main.getChatHistory(friendName);
     });
 
-    window.Main.on("friend_data_sent", (event: FriendData, arg) => {
+    window.Main.on("send_chat_history", (event: FriendData, arg) => {
       console.log("Friend data received by client ");
       console.log(event);
       setFriendReceived(true);
@@ -35,10 +36,8 @@ function Chat() {
     });
 
     return function cleanup() {
-      window.Main.removeAllListeners("i_submitted_message");
-      window.Main.removeAllListeners("peer_submitted_message");
-      window.Main.removeAllListeners("friend_data_sent");
       window.Main.removeAllListeners("send_chat_history");
+      window.Main.removeAllListeners("update_chat_history");
     };
   });
 

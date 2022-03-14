@@ -17,7 +17,7 @@ function FriendObject(props) {
   //Handler to pass selected friendName to Electron,
   //used to render ChatHistory
   function handleFriend(friend: string) {
-    window.Main.getFriendChatObject(friend);
+    window.Main.getChatHistory(friend);
   }
   const lastSeenTimestamp: number = parseInt(props.lastSeen);
   const readableLastSeen = new Date(lastSeenTimestamp).toLocaleTimeString(
