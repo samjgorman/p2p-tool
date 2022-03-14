@@ -3,6 +3,7 @@ import chokidar from "chokidar";
 import readLastLines from "read-last-lines";
 import * as path from "path";
 import { writeToFS, getLengthOfChatGivenFilePath } from "./fileHelpers";
+import { BrowserWindow, ipcMain } from "electron";
 
 /**
  * watchFilesInDir handles watching chat files for changes, listens for updates to
@@ -12,7 +13,7 @@ import { writeToFS, getLengthOfChatGivenFilePath } from "./fileHelpers";
  * and writes the dif of the currentFileLength - pastFileLength to merged.json.
  * @param dirPath
  */
-export async function watchFilesInDir(dirPath: string) {
+export async function watchFilesInDir(dirPath: string, window: BrowserWindow) {
   const watcher = chokidar.watch(dirPath, {
     ignored: "**/*merged.json", // ignore dotfiles
     persistent: true,
@@ -52,6 +53,9 @@ export async function watchFilesInDir(dirPath: string) {
             "merged.json"
           );
           await writeToFS(mergeFilePath, lines.trim());
+          //Notify client that changes exist to rerender...
+          const message = "Chat history updated";
+          window.webContents.send("update_chat_history", message);
         })
 
         .catch((err) => {

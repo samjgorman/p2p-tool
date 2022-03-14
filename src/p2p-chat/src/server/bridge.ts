@@ -27,13 +27,13 @@ export const api = {
     ipcRenderer.send("send_peer_metadata", peer_metadata);
   },
 
-  getFriendChatObject: (friend: string) => {
-    ipcRenderer.send("get_friend_data", friend);
-  },
-
   attemptToSendToPeer: (message: string) => {
     ipcRenderer.send("attempt_to_send_online_message_to_peer", message);
   },
+  getChatHistory: (friendName: string) => {
+    ipcRenderer.send("get_chat_history", friendName);
+  },
+
   /**
    * Provide an easier way to listen to events
    */
