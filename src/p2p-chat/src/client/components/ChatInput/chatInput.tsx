@@ -1,5 +1,11 @@
 import React from "react";
 import { MessageData } from "../../../shared/@types/types";
+import {
+  ChatInputContainer,
+  ChatInputMessageInput,
+  ChatInputSubmitButton,
+  ChatInputForm
+} from "./chatInputStyling";
 
 /**
  *  Handler triggered with onSubmit in Chat to send peer metadata to Electron.
@@ -26,19 +32,17 @@ async function handleMessage(
  */
 function ChatInput(props) {
   return (
-    <React.Fragment>
-      <div className="LiveChatMessageForm">
-        <form
-          className="liveChat-message-form"
-          noValidate
-          autoComplete="off"
-          onSubmit={(event) => handleMessage(event, props.recipient)}
-        >
-          <input className="chat-field" placeholder="Send a message..." />
-          <input className="send-chat-button" type="submit" value="Send" />
-        </form>
-      </div>
-    </React.Fragment>
+    <ChatInputContainer>
+      <ChatInputForm
+        className="liveChat-message-form"
+        noValidate
+        autoComplete="off"
+        onSubmit={(event) => handleMessage(event, props.recipient)}
+      >
+        <ChatInputMessageInput placeholder="Send a message..." />
+        <ChatInputSubmitButton type="submit" value="Send" />
+      </ChatInputForm>
+    </ChatInputContainer>
   );
 }
 
